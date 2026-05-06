@@ -92,7 +92,7 @@ pipeline {
 
                                         curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${AI_PORT}/health"
                                         curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${BACKEND_PORT}/health"
-                                        curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${FRONTEND_PORT}/"
+                                        curl --fail --retry 12 --retry-delay 5 --retry-all-errors -o /dev/null "http://host.docker.internal:${FRONTEND_PORT}/"
                 '''
             }
         }
