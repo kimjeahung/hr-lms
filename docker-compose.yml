@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build: ./infra/jenkins
     container_name: lms_jenkins
     ports:
       - "8090:8080"
