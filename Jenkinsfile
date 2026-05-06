@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        SLACK_NOTIFICATION_CHANNEL = '#jenkins-알림'
+    }
+
     stages {
 
         stage('Git Pull') {
@@ -100,11 +104,25 @@ pipeline {
 
     post {
         success {
-            echo 'Deploy Success'
+            script {
+                try {
+                    slackSend(channel: "${SLACK_NOTIFICATION_CHANNEL}", color: '#41fc03',
+                        message: "운영 서버에 성공적으로 배포했습니다! \n Job : <${env.BUILD_URL}|${env.JOB_NAME} ${env.BUILD_NUMBER}>")
+                } catch (Exception e) {
+                    echo "Deploy Success (Slack send skipped: ${e.getMessage()})"
+                }
+            }
         }
 
         failure {
-            echo 'Deploy Failed'
+            script {
+                try {
+                    slackSend(channel: "${SLACK_NOTIFICATION_CHANNEL}", color: '#fc0f03',
+                        message: "운영 서버에 배포가 실패했습니다! \n Job : <${env.BUILD_URL}|${env.JOB_NAME} ${env.BUILD_NUMBER}>")
+                } catch (Exception e) {
+                    echo "Deploy Failed (Slack send skipped: ${e.getMessage()})"
+                }
+            }
         }
     }
 }
