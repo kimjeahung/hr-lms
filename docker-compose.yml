@@ -1,0 +1,32 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://192.168.2.46:8085
+    container_name: lms_frontend
+    ports:
+      - "3005:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://192.168.2.46:8085
+
+  backend:
+    build: ./backend
+    container_name: lms_backend
+    ports:
+      - "8085:8080"
+    depends_on:
+      - ai
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/lms_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: lms_user
+      SPRING_DATASOURCE_PASSWORD: 1234
+      AI_SERVER_URL: http://ai:5000
+
+  ai:
+    build: ./ai
+    container_name: lms_ai
+    ports:
+      - "5005:5000"
