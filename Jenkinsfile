@@ -17,6 +17,7 @@ pipeline {
                     sh '''
                         set -eu
                         cp "$ENV_FILE" .env
+                        sed -i 's/\r$//' .env
                         chmod 600 .env
                         docker compose --env-file .env config -q
                     '''
@@ -67,6 +68,7 @@ pipeline {
             steps {
                 sh '''
                     set -a
+                    sed -i 's/\r$//' .env
                     . ./.env
                     set +a
 
