@@ -27,12 +27,11 @@ pipeline {
         stage('Backend Tests') {
             steps {
                 sh '''
-                    docker run --rm \
-                      -v "$PWD/backend:/app" \
+                    tar -C backend -cf - . | docker run --rm -i \
                       -v "$HOME/.gradle:/home/gradle/.gradle" \
                       -w /app \
                       gradle:8.7-jdk17 \
-                      gradle test --no-daemon
+                      /bin/sh -c 'mkdir -p /app; tar -xf - -C /app; gradle test --no-daemon'
                 '''
             }
         }
@@ -40,11 +39,10 @@ pipeline {
         stage('Frontend Validation') {
             steps {
                 sh '''
-                    docker run --rm \
-                      -v "$PWD/frontend:/app" \
+                    tar -C frontend -cf - . | docker run --rm -i \
                       -w /app \
                       node:20-alpine \
-                      sh -lc "npm ci && npm run lint && npm run build"
+                      /bin/sh -c 'mkdir -p /app; tar -xf - -C /app; npm ci; npm run lint; npm run build'
                 '''
             }
         }
