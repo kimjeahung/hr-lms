@@ -67,14 +67,32 @@ pipeline {
         stage('Post-Deploy Health Check') {
             steps {
                 sh '''
-                    set -a
                     sed -i 's/\r$//' .env
-                    . ./.env
-                    set +a
 
-                    curl --fail --retry 12 --retry-delay 5 --retry-connrefused "http://host.docker.internal:${AI_HTTP_PORT}/health"
-                    curl --fail --retry 12 --retry-delay 5 --retry-connrefused "http://host.docker.internal:${BACKEND_HTTP_PORT}/health"
-                    curl --fail --retry 12 --retry-delay 5 --retry-connrefused "http://host.docker.internal:${FRONTEND_HTTP_PORT}"
+                                        AI_PORT=$(awk -F= '/^AI_HTTP_PORT=/{print $2}' .env | tr -d '\r')
+                                        BACKEND_PORT=$(awk -F= '/^BACKEND_HTTP_PORT=/{print $2}' .env | tr -d '\r')
+                                        FRONTEND_PORT=$(awk -F= '/^FRONTEND_HTTP_PORT=/{print $2}' .env | tr -d '\r')
+
+                                        [ -n "$AI_PORT" ] || AI_PORT=5005
+                                        [ -n "$BACKEND_PORT" ] || BACKEND_PORT=8085
+                                        [ -n "$FRONTEND_PORT" ] || FRONTEND_PORT=3005
+
+                                        FRONTEND_CID=$(docker compose --env-file .env ps -q frontend)
+                                        if [ -n "$FRONTEND_CID" ]; then
+                                            i=0
+                                            while [ $i -lt 24 ]; do
+                                                STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$FRONTEND_CID")
+                                                if [ "$STATUS" = "healthy" ] || [ "$STATUS" = "none" ]; then
+                                                    break
+                                                fi
+                                                i=$((i+1))
+                                                sleep 5
+                                            done
+                                        fi
+
+                                        curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${AI_PORT}/health"
+                                        curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${BACKEND_PORT}/health"
+                                        curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${FRONTEND_PORT}/"
                 '''
             }
         }
