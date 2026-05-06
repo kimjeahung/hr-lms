@@ -14,7 +14,7 @@
   아래 명령어로 애플리케이션 전체 스택을 실행합니다.
   docker compose --env-file .env up -d --build
 
-## Jenkins 파이프라인 동작 조건
+## Jenkins 파이프라인 동작 조건(SCM POOL)
   Jenkins 파이프라인 실행 시 작업 공간(workspace)에 .env 파일이 존재해야 합니다.
   백엔드 테스트는 Gradle 컨테이너 내부에서 실행됩니다.
   프론트엔드 lint 및 build 작업은 Node 컨테이너 내부에서 실행됩니다.
