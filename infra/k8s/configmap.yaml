@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hr-lms-config
+  namespace: hr-lms
+data:
+  # Browser-facing backend URL used at frontend build/runtime.
+  NEXT_PUBLIC_API_URL: "http://192.168.2.46:30085"
+  # Adjust DB endpoint to your MySQL location reachable from Kubernetes nodes.
+  SPRING_DATASOURCE_URL: "jdbc:mysql://192.168.2.46:3306/lms_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+  AI_SERVER_URL: "http://ai:5000"
