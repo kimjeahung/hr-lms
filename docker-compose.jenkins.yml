@@ -1,0 +1,17 @@
+name: hr-lms-jenkins
+
+services:
+  jenkins:
+    build: ./infra/jenkins
+    ports:
+      - "${JENKINS_HTTP_PORT:-8090}:8080"
+      - "${JENKINS_AGENT_PORT:-50000}:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+    external: true
+    name: hr-lms_jenkins_home

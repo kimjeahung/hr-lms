@@ -11,6 +11,7 @@ npm-debug.log*
 # Spring Boot / Gradle
 # =========================
 .gradle/
+.gradle-cache/
 build/
 *.class
 
