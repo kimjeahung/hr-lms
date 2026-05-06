@@ -11,6 +11,7 @@ services:
       - backend
     environment:
       NEXT_PUBLIC_API_URL: http://192.168.2.46:8085
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -24,9 +25,25 @@ services:
       SPRING_DATASOURCE_USERNAME: lms_user
       SPRING_DATASOURCE_PASSWORD: 1234
       AI_SERVER_URL: http://ai:5000
+    restart: unless-stopped
 
   ai:
     build: ./ai
     container_name: lms_ai
     ports:
       - "5005:5000"
+    restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: lms_jenkins
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
