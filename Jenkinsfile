@@ -6,14 +6,15 @@ pipeline {
         stage('Git Pull') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/wpghksdnd/hr-lms.git'
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/wpghksdnd/hr-lms.git'
             }
         }
 
-        stage('Docker Compose Build') {
+        stage('Docker Deploy') {
             steps {
-                sh 'docker compose down'
-                sh 'docker compose up -d --build'
+                sh 'docker-compose down'
+                sh 'docker-compose up -d --build'
             }
         }
     }
