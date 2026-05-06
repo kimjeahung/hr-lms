@@ -19,3 +19,4 @@
 - Backend tests run in a Gradle container.
 - Frontend lint/build runs in a Node container.
 - Deployment succeeds only after post-deploy health checks pass.
+- 젠킨스수정
