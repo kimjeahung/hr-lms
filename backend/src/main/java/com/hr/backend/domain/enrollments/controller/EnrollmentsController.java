@@ -43,13 +43,6 @@ public class EnrollmentsController {
         return ResponseEntity.ok(courseRegistrationservice.manageCourseSessions(enrollmentId, progress));
     }
 
-    // 수강 취소
-    @DeleteMapping("/{enrollmentId}")
-    public ResponseEntity<Void> cancelEnrollment(@PathVariable Long enrollmentId) {
-        courseRegistrationservice.cancelEnrollment(enrollmentId);
-        return ResponseEntity.noContent().build();
-    }
-
     // 수강 상세조회
     @GetMapping("/{enrollmentId}")
     public ResponseEntity<Enrollments> getEnrollmentDetails(@PathVariable Long enrollmentId) {
@@ -70,7 +63,7 @@ public class EnrollmentsController {
         return ResponseEntity.ok(courseRegistrationservice.completeEnrollment(enrollmentId));
     }
 
-    // 수강 상태 변경
+    // 수강 상태 변경 (NOT_STARTED, IN_PROGRESS, DONE)
     @PutMapping("/{enrollmentId}/status")
     public ResponseEntity<Enrollments> changeEnrollmentStatus(
             @PathVariable Long enrollmentId,
@@ -84,7 +77,7 @@ public class EnrollmentsController {
         return ResponseEntity.ok(courseRegistrationservice.getEnrollmentStatistics());
     }
 
-    // 수강 피드백 제출 (추후 Feedback 엔티티 추가 시 확장)
+    // 수강 피드백 제출
     @PostMapping("/{enrollmentId}/feedback")
     public ResponseEntity<String> submitEnrollmentFeedback(
             @PathVariable Long enrollmentId,
@@ -92,7 +85,7 @@ public class EnrollmentsController {
         return ResponseEntity.ok("피드백이 제출되었습니다.");
     }
 
-    // 수강 알림 설정 (추후 Notification 엔티티 추가 시 확장)
+    // 수강 알림 설정
     @PostMapping("/{enrollmentId}/notifications")
     public ResponseEntity<String> setEnrollmentNotifications(
             @PathVariable Long enrollmentId,
@@ -104,5 +97,11 @@ public class EnrollmentsController {
     @GetMapping("/ongoing/{userId}")
     public ResponseEntity<List<Enrollments>> getOngoingEnrollments(@PathVariable Long userId) {
         return ResponseEntity.ok(courseRegistrationservice.getOngoingEnrollments(userId));
+    }
+
+    //특정 유저 수강 내역 조회(본인수강 내역 조회)
+    @GetMapping("/all/{userId}")
+    public ResponseEntity<List<Enrollments>> getALLEnrollmentsByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(courseRegistrationservice.getALLEnrollmentsByUser(userId));
     }
 }

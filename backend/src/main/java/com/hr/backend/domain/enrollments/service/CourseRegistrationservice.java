@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hr.backend.domain.courses.entity.Courses;
 import com.hr.backend.domain.courses.repository.CoursesRepository;
+import com.hr.backend.domain.enrollments.EnrollmentEnum;
 import com.hr.backend.domain.enrollments.entity.Enrollments;
 import com.hr.backend.domain.enrollments.repository.EnrollmentsRepository;
 import com.hr.backend.domain.user.entity.User;
@@ -41,7 +42,7 @@ public class CourseRegistrationservice {
         enrollment.setUser_id(user);
         enrollment.setCourse_id(course);
         enrollment.setProgress(0);
-        enrollment.setStatus("ENROLLED");
+        enrollment.setStatus(EnrollmentEnum.IN_PROGRESS.name());
         enrollment.setStarted_at(new Date());
 
         return enrollmentsRepository.save(enrollment);
@@ -63,8 +64,10 @@ public class CourseRegistrationservice {
 
         enrollment.setProgress(progress);
         if (progress >= 100) {
-            enrollment.setStatus("COMPLETED");
+            enrollment.setStatus(EnrollmentEnum.DONE.name());
             enrollment.setCompleted_at(new Date());
+        } else {
+            enrollment.setStatus(EnrollmentEnum.IN_PROGRESS.name());
         }
 
         return enrollmentsRepository.save(enrollment);
@@ -87,24 +90,13 @@ public class CourseRegistrationservice {
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
     }
 
-    //수강 취소
-    @Transactional
-    public void cancelEnrollment(Long enrollmentId) {
-        Enrollments enrollment = enrollmentsRepository.findById(enrollmentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
-        if ("COMPLETED".equals(enrollment.getStatus())) {
-            throw new IllegalStateException("이미 완료된 수강은 취소할 수 없습니다.");
-        }
-        enrollmentsRepository.delete(enrollment);
-    }
-
     //수강 완료 처리
     @Transactional
     public Enrollments completeEnrollment(Long enrollmentId) {
         Enrollments enrollment = enrollmentsRepository.findById(enrollmentId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
         enrollment.setProgress(100);
-        enrollment.setStatus("COMPLETED");
+        enrollment.setStatus(EnrollmentEnum.DONE.name());
         enrollment.setCompleted_at(new Date());
         return enrollmentsRepository.save(enrollment);
     }
@@ -114,6 +106,11 @@ public class CourseRegistrationservice {
     public Enrollments changeEnrollmentStatus(Long enrollmentId, String status) {
         Enrollments enrollment = enrollmentsRepository.findById(enrollmentId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        try {
+            EnrollmentEnum.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 상태값입니다. 유효한 값: " + java.util.Arrays.toString(EnrollmentEnum.values()));
+        }
         enrollment.setStatus(status);
         return enrollmentsRepository.save(enrollment);
     }
@@ -123,7 +120,15 @@ public class CourseRegistrationservice {
     public List<Enrollments> getOngoingEnrollments(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return enrollmentsRepository.findByUser_idAndStatus(user, "ENROLLED");
+        return enrollmentsRepository.findByUser_idAndStatus(user, EnrollmentEnum.IN_PROGRESS.name());
+    }
+
+    //특정 유저 수강 내역 조회(본인수강 내역 조회)
+    @Transactional(readOnly = true)
+    public List<Enrollments> getALLEnrollmentsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        return enrollmentsRepository.findByUser_id(user);
     }
 
     //수강 통계 조회
@@ -131,9 +136,9 @@ public class CourseRegistrationservice {
     public Map<String, Object> getEnrollmentStatistics() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", enrollmentsRepository.count());
-        stats.put("enrolled", enrollmentsRepository.countByStatus("ENROLLED"));
-        stats.put("completed", enrollmentsRepository.countByStatus("COMPLETED"));
-        stats.put("cancelled", enrollmentsRepository.countByStatus("CANCELLED"));
+        stats.put("notStarted", enrollmentsRepository.countByStatus(EnrollmentEnum.NOT_STARTED.name()));
+        stats.put("inProgress", enrollmentsRepository.countByStatus(EnrollmentEnum.IN_PROGRESS.name()));
+        stats.put("completed", enrollmentsRepository.countByStatus(EnrollmentEnum.DONE.name()));
         return stats;
     }
 }

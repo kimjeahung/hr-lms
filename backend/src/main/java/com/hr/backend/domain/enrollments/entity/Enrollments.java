@@ -15,7 +15,7 @@ import lombok.*;
 public class Enrollments { //수강 및 이수 관리를 위한 엔티티
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long enrollment_id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -25,10 +25,10 @@ public class Enrollments { //수강 및 이수 관리를 위한 엔티티
     @JoinColumn(name = "course_id", nullable = false)
     private Courses course_id; // 수강 강의
 
-    @Column(name = "employee_no", nullable = false, length = 20)
+    @Column(name = "progress", nullable = false)
     private int progress; // 수강 진행률 (0~100)
 
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 15) //enum으로 관리
     private String status;
 
     @Column(name = "started_at", nullable = true)

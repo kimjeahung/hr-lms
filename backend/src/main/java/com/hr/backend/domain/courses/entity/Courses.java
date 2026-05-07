@@ -2,6 +2,8 @@ package com.hr.backend.domain.courses.entity;
 
 import java.util.Date;
 
+import com.hr.backend.domain.courses.CoursesEnum;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,13 +19,14 @@ public class Courses { //강의를 관리
     @Column(name = "title", nullable = false, length = 100)
     private String title;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 500) //TEXT
     private String description;
 
-    @Column(name = "category", length = 50)
-    private String category;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 50)//enum으로 관리
+    private CoursesEnum category;
 
-    @Column(name = "target_role", nullable = false, columnDefinition = "int default 0")
+    @Column(name = "target_role", nullable = false, columnDefinition = "int default 0") 
     private int target_role; // 0: 관리자, 1: 현장직, 2: 사무직
 
     @Column(name = "duration_min", nullable = false)
@@ -32,10 +35,10 @@ public class Courses { //강의를 관리
     @Column(name = "deadline")
     private Date deadline; // 이수 마감일
 
-    @Column(name = "is_active")
+    @Column(name = "is_active") //운영여부
     private Boolean is_active;
 
-    @Column(name = "create_at")
+    @Column(name = "create_at") //등록일시
     private Date create_at;
 
 }
