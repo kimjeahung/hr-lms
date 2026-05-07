@@ -9,5 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api/enrollments")
 public class EnrollmentsController {
-    
+    public String enrollments() {
+        return "Enrollments API";
+    }
 }
