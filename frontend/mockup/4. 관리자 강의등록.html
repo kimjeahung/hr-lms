@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMS - 강의 등록</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 14px; }
+
+.tab-nav { display: flex; gap: 6px; padding: 14px 20px 0; background: #1a1a2e; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-x: auto; }
+.tab-btn { padding: 9px 22px; font-size: 13px; border: 1px solid transparent; border-radius: 8px 8px 0 0; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5); font-family: inherit; white-space: nowrap; border-bottom: none; }
+.tab-btn.active { background: #f5f5f3; color: #1a1a2e; font-weight: 700; border-color: rgba(255,255,255,0.2); border-bottom-color: #f5f5f3; }
+.page { display: none; background: #f5f5f3; min-height: 520px; }
+.page.active { display: block; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 13px 28px; background: #1a1a2e; }
+.nav-logo { font-size: 16px; font-weight: 700; color: #fff; }
+.nav-logo span { color: #4A90D9; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-user { font-size: 13px; color: rgba(255,255,255,0.7); }
+.nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: #E24B4A; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+
+/* STEP BAR */
+.step-bar { background: #fff; border-bottom: 1px solid rgba(0,0,0,0.07); padding: 18px 28px; }
+.steps { display: flex; align-items: center; max-width: 640px; }
+.step { display: flex; align-items: center; gap: 10px; flex: 1; }
+.step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #888; background: #fff; flex-shrink: 0; }
+.step.done .step-circle { background: #EAF3DE; border-color: #639922; color: #3B6D11; }
+.step.active .step-circle { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
+.step-label { font-size: 13px; color: #888; font-weight: 500; }
+.step.active .step-label { color: #1a1a2e; font-weight: 700; }
+.step.done .step-label { color: #3B6D11; }
+.step-line { flex: 1; height: 1px; background: rgba(0,0,0,0.1); margin: 0 10px; max-width: 50px; }
+.step-line.done { background: #639922; }
+
+/* FORM */
+.wrap { padding: 24px 28px; max-width: 720px; }
+.form-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+.form-card-title { font-size: 15px; font-weight: 700; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(0,0,0,0.07); color: #1a1a2e; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; font-weight: 700; color: #555; }
+.required { color: #E24B4A; margin-left: 2px; }
+.form-input { padding: 11px 14px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: #4A90D9; }
+.form-select { padding: 11px 14px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; }
+.form-textarea { padding: 11px 14px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; resize: none; width: 100%; min-height: 90px; }
+.form-hint { font-size: 11px; color: #888; }
+
+.toggle-row { display: flex; align-items: center; gap: 14px; }
+.toggle { width: 44px; height: 24px; border-radius: 12px; background: #185FA5; position: relative; cursor: pointer; flex-shrink: 0; }
+.toggle-dot { width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; top: 3px; right: 3px; }
+.toggle-label { font-size: 13px; font-weight: 600; color: #185FA5; }
+
+.target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.target-option { padding: 14px 12px; border: 2px solid rgba(0,0,0,0.1); border-radius: 10px; cursor: pointer; text-align: center; background: #fff; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+.target-option:hover { border-color: #185FA5; background: #f0f6fd; }
+.target-option.on { border-color: #185FA5; background: #E6F1FB; color: #185FA5; }
+
+.info-box { border-radius: 8px; padding: 12px 14px; font-size: 12px; }
+.info-box.blue { background: #E6F1FB; color: #185FA5; }
+
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.prev-btn { padding: 11px 24px; background: #fff; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; }
+.next-btn { padding: 11px 30px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+/* 콘텐츠 */
+.content-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.content-item { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.content-item.empty { border: 1.5px dashed rgba(0,0,0,0.12); background: #fafaf8; }
+.drag-handle { color: #ccc; font-size: 18px; cursor: grab; flex-shrink: 0; }
+.content-num { width: 30px; height: 30px; border-radius: 50%; background: #1a1a2e; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.content-num.empty { background: #ccc; }
+.content-info { flex: 1; }
+.content-title-input { width: 100%; padding: 8px 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; font-size: 13px; font-family: inherit; outline: none; margin-bottom: 6px; }
+.content-title-input:focus { border-color: #4A90D9; }
+.content-meta { display: flex; gap: 14px; font-size: 11px; color: #888; align-items: center; }
+.content-file { font-size: 11px; color: #185FA5; font-weight: 600; }
+.upload-zone-sm { border: 2px dashed rgba(0,0,0,0.12); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; background: #fff; margin-top: 6px; }
+.upload-zone-sm:hover { border-color: #185FA5; }
+.content-del { font-size: 12px; color: #A32D2D; cursor: pointer; border: 1px solid rgba(224,75,74,0.2); padding: 5px 12px; border-radius: 6px; background: #fff; font-family: inherit; flex-shrink: 0; }
+.content-del:hover { background: #FCEBEB; }
+.add-content-btn { width: 100%; padding: 15px; border: 2px dashed rgba(0,0,0,0.12); border-radius: 10px; background: #fafaf8; cursor: pointer; font-size: 13px; font-weight: 700; color: #888; font-family: inherit; }
+.add-content-btn:hover { border-color: #185FA5; color: #185FA5; background: #f0f6fd; }
+
+/* 시험 */
+.exam-toggle-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.question-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.question-item { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 10px; padding: 16px 18px; }
+.q-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.q-num-badge { background: #1a1a2e; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+.q-input { flex: 1; padding: 9px 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; font-size: 13px; font-family: inherit; outline: none; }
+.q-input:focus { border-color: #4A90D9; }
+.q-del { font-size: 12px; color: #A32D2D; cursor: pointer; border: 1px solid rgba(224,75,74,0.2); padding: 5px 12px; border-radius: 6px; background: #fff; font-family: inherit; white-space: nowrap; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.option-input-wrap { display: flex; align-items: center; gap: 8px; }
+.option-radio { width: 16px; height: 16px; accent-color: #185FA5; flex-shrink: 0; cursor: pointer; }
+.option-input { flex: 1; padding: 8px 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; font-size: 12px; font-family: inherit; outline: none; }
+.option-input:focus { border-color: #4A90D9; }
+.answer-row { font-size: 12px; color: #888; display: flex; align-items: center; gap: 8px; }
+.answer-select { padding: 5px 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; font-size: 12px; font-family: inherit; outline: none; }
+.add-q-btn { width: 100%; padding: 13px; border: 2px dashed rgba(0,0,0,0.12); border-radius: 10px; background: #fafaf8; cursor: pointer; font-size: 13px; font-weight: 700; color: #888; font-family: inherit; }
+.add-q-btn:hover { border-color: #185FA5; color: #185FA5; background: #f0f6fd; }
+
+/* 완료 */
+.success-wrap { padding: 60px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 500px; }
+.success-icon { width: 72px; height: 72px; border-radius: 50%; background: #EAF3DE; display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 20px; color: #3B6D11; }
+.success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.success-sub { font-size: 14px; color: #888; margin-bottom: 28px; text-align: center; line-height: 1.8; }
+.success-summary { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 20px 28px; min-width: 360px; margin-bottom: 24px; }
+.ss-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+.ss-row:last-child { border-bottom: none; }
+.ss-label { color: #888; }
+.ss-val { font-weight: 700; }
+.success-actions { display: flex; gap: 10px; }
+.more-btn { padding: 12px 24px; background: #fff; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.goto-btn { padding: 12px 28px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('step1',this)">① 기본 정보</button>
+  <button class="tab-btn" onclick="showTab('step2',this)">② 수강 설정</button>
+  <button class="tab-btn" onclick="showTab('step3',this)">③ 콘텐츠 업로드</button>
+  <button class="tab-btn" onclick="showTab('step4',this)">④ 시험 설정</button>
+  <button class="tab-btn" onclick="showTab('step5',this)">✅ 등록 완료</button>
+</div>
+
+<!-- STEP 1 -->
+<div id="page-step1" class="page active">
+  <div class="nav"><div class="nav-logo"><span>LMS</span> 관리자</div><div class="nav-right"><span class="nav-user">김인사 팀장 (어드민)</span><div class="nav-avatar">김</div></div></div>
+  <div class="step-bar">
+    <div class="steps">
+      <div class="step active"><div class="step-circle">1</div><span class="step-label">기본 정보</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">2</div><span class="step-label">수강 설정</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">3</div><span class="step-label">콘텐츠 업로드</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">4</div><span class="step-label">시험 설정</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="form-card">
+      <div class="form-card-title">강의 기본 정보</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">강의명 <span class="required">*</span></label>
+          <input class="form-input" placeholder="예) 개인정보보호 교육 2025" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">카테고리 <span class="required">*</span></label>
+          <select class="form-select">
+            <option>법정의무교육</option>
+            <option>직무교육</option>
+            <option>리더십</option>
+            <option>IT/디지털</option>
+            <option>어학</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">총 강의 시간</label>
+          <input class="form-input" placeholder="예) 60분" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">강의 설명</label>
+          <textarea class="form-textarea" placeholder="강의 내용을 간략하게 설명해주세요."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">수강 대상 <span class="required">*</span></div>
+      <div class="target-grid">
+        <div class="target-option on" onclick="toggleTarget(this)">🏢 전체</div>
+        <div class="target-option" onclick="toggleTarget(this)">💼 사무직</div>
+        <div class="target-option" onclick="toggleTarget(this)">🦺 현장직</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">필수 교육 여부</div>
+      <div class="toggle-row">
+        <div class="toggle"><div class="toggle-dot"></div></div>
+        <span class="toggle-label">필수 교육으로 설정</span>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:10px">필수 설정 시 대상 직원 전체에게 자동 배정됩니다.</div>
+    </div>
+
+    <div class="form-actions">
+      <button class="next-btn" onclick="showTab('step2',document.querySelectorAll('.tab-btn')[1])">다음 단계 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2 -->
+<div id="page-step2" class="page">
+  <div class="nav"><div class="nav-logo"><span>LMS</span> 관리자</div><div class="nav-right"><span class="nav-user">김인사 팀장 (어드민)</span><div class="nav-avatar">김</div></div></div>
+  <div class="step-bar">
+    <div class="steps">
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">기본 정보</span></div>
+      <div class="step-line done"></div>
+      <div class="step active"><div class="step-circle">2</div><span class="step-label">수강 설정</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">3</div><span class="step-label">콘텐츠 업로드</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">4</div><span class="step-label">시험 설정</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="form-card">
+      <div class="form-card-title">수강신청 기간</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">신청 시작일 <span class="required">*</span></label>
+          <input class="form-input" type="date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">신청 마감일 <span class="required">*</span></label>
+          <input class="form-input" type="date" />
+        </div>
+        <div class="form-group full">
+          <label class="form-label">이수 마감일 <span class="required">*</span></label>
+          <input class="form-input" type="date" />
+          <div class="form-hint">이수 마감일까지 수료 기준을 달성해야 합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">수료 기준 설정</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">진도율 기준 <span class="required">*</span></label>
+          <select class="form-select">
+            <option>80% 이상</option>
+            <option>90% 이상</option>
+            <option>100% 완료</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">시험 합격 기준</label>
+          <select class="form-select">
+            <option>시험 없음</option>
+            <option>60점 이상</option>
+            <option selected>70점 이상</option>
+            <option>80점 이상</option>
+          </select>
+        </div>
+      </div>
+      <div class="info-box blue" style="margin-top:16px">
+        💡 수료 조건 : 진도율 80% 이상 + 시험 70점 이상 달성 시 수료증이 자동 발급됩니다.
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="prev-btn" onclick="showTab('step1',document.querySelectorAll('.tab-btn')[0])">← 이전</button>
+      <button class="next-btn" onclick="showTab('step3',document.querySelectorAll('.tab-btn')[2])">다음 단계 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div id="page-step3" class="page">
+  <div class="nav"><div class="nav-logo"><span>LMS</span> 관리자</div><div class="nav-right"><span class="nav-user">김인사 팀장 (어드민)</span><div class="nav-avatar">김</div></div></div>
+  <div class="step-bar">
+    <div class="steps">
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">기본 정보</span></div>
+      <div class="step-line done"></div>
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">수강 설정</span></div>
+      <div class="step-line done"></div>
+      <div class="step active"><div class="step-circle">3</div><span class="step-label">콘텐츠 업로드</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-circle">4</div><span class="step-label">시험 설정</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="form-card">
+      <div class="form-card-title">강의 콘텐츠 목록 <span style="font-size:12px;color:#888;font-weight:400">· 드래그로 순서 변경 가능</span></div>
+      <div class="content-list">
+        <div class="content-item">
+          <span class="drag-handle">⠿</span>
+          <div class="content-num">1</div>
+          <div class="content-info">
+            <input class="content-title-input" value="개인정보 개념과 법적 근거" />
+            <div class="content-meta">
+              <span class="content-file">📹 lecture_01.mp4</span>
+              <span>15:20</span>
+              <span style="color:#3B6D11;font-weight:600">✓ 업로드 완료</span>
+            </div>
+          </div>
+          <button class="content-del">삭제</button>
+        </div>
+        <div class="content-item">
+          <span class="drag-handle">⠿</span>
+          <div class="content-num">2</div>
+          <div class="content-info">
+            <input class="content-title-input" value="개인정보 수집과 이용" />
+            <div class="content-meta">
+              <span class="content-file">📹 lecture_02.mp4</span>
+              <span>29:50</span>
+              <span style="color:#3B6D11;font-weight:600">✓ 업로드 완료</span>
+            </div>
+          </div>
+          <button class="content-del">삭제</button>
+        </div>
+        <div class="content-item empty">
+          <span class="drag-handle" style="color:#ddd">⠿</span>
+          <div class="content-num empty">3</div>
+          <div class="content-info">
+            <input class="content-title-input" placeholder="강의 제목 입력..." style="background:#f5f5f3;border-color:rgba(0,0,0,0.08)" />
+            <div class="upload-zone-sm">
+              <div style="font-size:22px;margin-bottom:5px">📁</div>
+              <div style="font-size:12px;color:#888;font-weight:600">영상 파일을 업로드하세요</div>
+              <div style="font-size:11px;color:#bbb;margin-top:3px">.mp4, .mov 지원 · 최대 2GB</div>
+            </div>
+          </div>
+          <button class="content-del" style="color:#bbb;border-color:#eee">삭제</button>
+        </div>
+      </div>
+      <button class="add-content-btn">+ 강의 추가</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="prev-btn" onclick="showTab('step2',document.querySelectorAll('.tab-btn')[1])">← 이전</button>
+      <button class="next-btn" onclick="showTab('step4',document.querySelectorAll('.tab-btn')[3])">다음 단계 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4 -->
+<div id="page-step4" class="page">
+  <div class="nav"><div class="nav-logo"><span>LMS</span> 관리자</div><div class="nav-right"><span class="nav-user">김인사 팀장 (어드민)</span><div class="nav-avatar">김</div></div></div>
+  <div class="step-bar">
+    <div class="steps">
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">기본 정보</span></div>
+      <div class="step-line done"></div>
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">수강 설정</span></div>
+      <div class="step-line done"></div>
+      <div class="step done"><div class="step-circle">✓</div><span class="step-label">콘텐츠 업로드</span></div>
+      <div class="step-line done"></div>
+      <div class="step active"><div class="step-circle">4</div><span class="step-label">시험 설정</span></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="exam-toggle-card">
+      <div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">시험 포함</div>
+        <div style="font-size:12px;color:#888">강의 수료 후 시험을 응시하도록 설정합니다</div>
+      </div>
+      <div class="toggle"><div class="toggle-dot"></div></div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">시험 기본 설정</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">합격 점수 <span class="required">*</span></label>
+          <select class="form-select">
+            <option>60점 이상</option>
+            <option selected>70점 이상</option>
+            <option>80점 이상</option>
+            <option>90점 이상</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">재응시 허용</label>
+          <select class="form-select">
+            <option>무제한</option>
+            <option selected>3회까지</option>
+            <option>1회만</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">문제 등록</div>
+      <div class="question-list">
+        <div class="question-item">
+          <div class="q-header">
+            <span class="q-num-badge">1번</span>
+            <input class="q-input" value="개인정보보호법에 따른 개인정보의 정의로 옳은 것은?" />
+            <button class="q-del">삭제</button>
+          </div>
+          <div class="options-grid">
+            <div class="option-input-wrap"><input type="radio" name="q1" class="option-radio"><input class="option-input" value="성명, 주민등록번호 등 특정 개인 정보" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q1" class="option-radio" checked><input class="option-input" value="살아있는 개인을 알아볼 수 있는 정보" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q1" class="option-radio"><input class="option-input" value="공공기관이 보유한 모든 정보" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q1" class="option-radio"><input class="option-input" value="인터넷에 공개된 개인 정보" /></div>
+          </div>
+          <div class="answer-row">정답 선택 : <select class="answer-select"><option>1번</option><option selected>2번</option><option>3번</option><option>4번</option></select></div>
+        </div>
+        <div class="question-item">
+          <div class="q-header">
+            <span class="q-num-badge">2번</span>
+            <input class="q-input" value="개인정보 수집 시 반드시 알려야 하는 사항이 아닌 것은?" />
+            <button class="q-del">삭제</button>
+          </div>
+          <div class="options-grid">
+            <div class="option-input-wrap"><input type="radio" name="q2" class="option-radio"><input class="option-input" value="수집·이용 목적" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q2" class="option-radio"><input class="option-input" value="수집 항목" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q2" class="option-radio"><input class="option-input" value="보유 및 이용 기간" /></div>
+            <div class="option-input-wrap"><input type="radio" name="q2" class="option-radio" checked><input class="option-input" value="정보주체의 연소득" /></div>
+          </div>
+          <div class="answer-row">정답 선택 : <select class="answer-select"><option>1번</option><option>2번</option><option>3번</option><option selected>4번</option></select></div>
+        </div>
+      </div>
+      <button class="add-q-btn">+ 문제 추가</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="prev-btn" onclick="showTab('step3',document.querySelectorAll('.tab-btn')[2])">← 이전</button>
+      <button class="next-btn" onclick="showTab('step5',document.querySelectorAll('.tab-btn')[4])">강의 등록 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 5 완료 -->
+<div id="page-step5" class="page">
+  <div class="nav"><div class="nav-logo"><span>LMS</span> 관리자</div><div class="nav-right"><span class="nav-user">김인사 팀장 (어드민)</span><div class="nav-avatar">김</div></div></div>
+  <div class="success-wrap">
+    <div class="success-icon">✓</div>
+    <div class="success-title">강의 등록 완료!</div>
+    <div class="success-sub">강의가 성공적으로 등록되었어요.<br>필수 교육 대상자에게 자동으로 배정됩니다.</div>
+    <div class="success-summary">
+      <div class="ss-row"><span class="ss-label">강의명</span><span class="ss-val">개인정보보호 교육 2025</span></div>
+      <div class="ss-row"><span class="ss-label">카테고리</span><span class="ss-val">법정의무교육</span></div>
+      <div class="ss-row"><span class="ss-label">수강 대상</span><span class="ss-val">전체 임직원</span></div>
+      <div class="ss-row"><span class="ss-label">강의 수</span><span class="ss-val">3강</span></div>
+      <div class="ss-row"><span class="ss-label">이수 마감</span><span class="ss-val">2025.05.31</span></div>
+      <div class="ss-row"><span class="ss-label">수료 기준</span><span class="ss-val">진도율 80% + 시험 70점</span></div>
+      <div class="ss-row"><span class="ss-label">자동 배정</span><span class="ss-val" style="color:#3B6D11">247명 배정 완료</span></div>
+    </div>
+    <div class="success-actions">
+      <button class="more-btn" onclick="showTab('step1',document.querySelectorAll('.tab-btn')[0])">+ 강의 추가 등록</button>
+      <button class="goto-btn">강의 목록으로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+function toggleTarget(el) {
+  document.querySelectorAll('.target-option').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+}
+</script>
+</body>
+</html>

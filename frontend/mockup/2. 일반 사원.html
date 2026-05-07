@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMS - 일반 사원 화면</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 14px; }
+
+.tab-nav { display: flex; gap: 6px; padding: 14px 20px 0; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.1); overflow-x: auto; }
+.tab-btn { padding: 9px 20px; font-size: 13px; border: 1px solid transparent; border-radius: 8px 8px 0 0; cursor: pointer; background: transparent; color: #888; font-family: inherit; white-space: nowrap; border-bottom: none; }
+.tab-btn.active { background: #f5f5f3; color: #185FA5; font-weight: 700; border-color: rgba(0,0,0,0.1); border-bottom-color: #f5f5f3; }
+.page { display: none; }
+.page.active { display: block; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; padding: 13px 28px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.nav-logo { font-size: 17px; font-weight: 700; }
+.nav-logo span { color: #185FA5; }
+.nav-links { display: flex; gap: 24px; }
+.nav-link { font-size: 13px; color: #555; cursor: pointer; }
+.nav-link.active { color: #185FA5; font-weight: 700; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.nav-user { font-size: 13px; color: #666; }
+.nav-avatar { width: 32px; height: 32px; border-radius: 50%; background: #E6F1FB; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #185FA5; }
+
+/* LOGIN */
+.login-wrap { min-height: 560px; display: flex; align-items: center; justify-content: center; background: #f5f5f3; padding: 40px 20px; }
+.login-card { background: #fff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.08); padding: 44px 40px; width: 100%; max-width: 400px; }
+.login-logo { font-size: 28px; font-weight: 800; color: #185FA5; margin-bottom: 4px; }
+.login-company { font-size: 14px; color: #888; margin-bottom: 32px; }
+.form-label { font-size: 12px; color: #555; margin-bottom: 6px; display: block; font-weight: 700; }
+.form-input { width: 100%; padding: 12px 14px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 14px; margin-bottom: 16px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: #185FA5; }
+.login-btn { width: 100%; padding: 13px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 4px; }
+.login-hint { font-size: 12px; color: #bbb; text-align: center; margin-top: 16px; }
+
+/* HERO */
+.hero { background: linear-gradient(135deg, #E6F1FB 0%, #d4e8f8 100%); padding: 32px 28px 28px; }
+.hero-label { font-size: 12px; color: #185FA5; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
+.hero-title { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+.hero-sub { font-size: 13px; color: #555; margin-bottom: 22px; }
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 520px; }
+.stat-card { background: #fff; border-radius: 12px; padding: 16px 18px; border: 1px solid rgba(0,0,0,0.06); }
+.stat-label { font-size: 11px; color: #888; margin-bottom: 5px; }
+.stat-val { font-size: 24px; font-weight: 700; color: #185FA5; }
+.stat-sub { font-size: 11px; color: #888; margin-top: 2px; }
+
+/* MAIN */
+.main { padding: 24px 28px; display: grid; grid-template-columns: 1fr 290px; gap: 20px; }
+.section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.see-all { font-size: 12px; color: #185FA5; cursor: pointer; }
+
+.course-list { display: flex; flex-direction: column; gap: 10px; }
+.course-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.course-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.course-info { flex: 1; min-width: 0; }
+.course-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.course-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 6px; font-weight: 600; }
+.badge-required { background: #FCEBEB; color: #A32D2D; }
+.badge-ongoing { background: #EAF3DE; color: #3B6D11; }
+.badge-new { background: #E6F1FB; color: #185FA5; }
+.prog-bg { height: 5px; background: #f0f0ee; border-radius: 5px; }
+.prog-bar { height: 5px; border-radius: 5px; background: #185FA5; }
+.prog-txt { font-size: 11px; color: #888; margin-top: 4px; }
+.action-btn { font-size: 12px; padding: 8px 18px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); background: #fff; cursor: pointer; white-space: nowrap; font-family: inherit; font-weight: 600; flex-shrink: 0; }
+.action-btn:hover { background: #f5f5f3; }
+.action-btn.primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+
+/* SIDEBAR */
+.sidebar { display: flex; flex-direction: column; gap: 14px; }
+.side-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 18px; }
+.mp-row { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 5px; }
+.mp-bg { height: 5px; background: #f0f0ee; border-radius: 5px; margin-bottom: 10px; }
+.mp-fill { height: 5px; border-radius: 5px; }
+.notice-item { padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.notice-item:last-child { border-bottom: none; padding-bottom: 0; }
+.notice-ttl { font-size: 13px; margin-bottom: 3px; font-weight: 500; }
+.notice-date { font-size: 11px; color: #999; }
+.chatbot-btn { width: 100%; padding: 12px; background: #185FA5; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+/* CATALOG */
+.catalog-wrap { padding: 24px 28px; }
+.search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.search-input { flex: 1; padding: 10px 14px; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-btn { padding: 7px 18px; font-size: 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.12); background: #fff; cursor: pointer; font-family: inherit; font-weight: 500; }
+.filter-btn.on { background: #185FA5; color: #fff; border-color: #185FA5; }
+.catalog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.cat-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; overflow: hidden; }
+.cat-thumb { height: 90px; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+.cat-body { padding: 14px 16px; }
+.cat-title { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.cat-meta { font-size: 12px; color: #888; margin-bottom: 12px; }
+.cat-enroll { width: 100%; padding: 9px; background: #f5f5f3; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600; }
+.cat-done { width: 100%; padding: 9px; background: #EAF3DE; border: none; border-radius: 8px; font-size: 13px; font-family: inherit; font-weight: 700; color: #3B6D11; }
+
+/* VIDEO */
+.video-player { background: #111; height: 220px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; position: relative; }
+.play-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.play-icon { width: 0; height: 0; border-style: solid; border-width: 10px 0 10px 20px; border-color: transparent transparent transparent #fff; margin-left: 4px; }
+.video-title-txt { color: rgba(255,255,255,0.85); font-size: 13px; }
+.video-ctrl { padding: 12px 20px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.07); }
+.vp-bar-bg { height: 4px; background: #f0f0ee; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
+.vp-bar { height: 4px; border-radius: 4px; background: #185FA5; width: 42%; }
+.vp-info { display: flex; justify-content: space-between; font-size: 12px; color: #888; }
+.video-body { display: grid; grid-template-columns: 1fr 240px; }
+.playlist { border-right: 1px solid rgba(0,0,0,0.07); }
+.pl-header { padding: 12px 18px; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(0,0,0,0.07); background: #fafaf8; }
+.pl-item { padding: 12px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); cursor: pointer; }
+.pl-item.active { background: #E6F1FB; border-left: 3px solid #185FA5; }
+.pl-num { font-size: 12px; color: #888; width: 20px; flex-shrink: 0; text-align: center; }
+.pl-info { flex: 1; }
+.pl-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.pl-dur { font-size: 11px; color: #888; }
+.pl-done { width: 20px; height: 20px; border-radius: 50%; background: #EAF3DE; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #3B6D11; font-weight: 700; flex-shrink: 0; }
+.video-side { padding: 16px; background: #fafaf8; }
+.tab-pills { display: flex; gap: 6px; margin-bottom: 14px; }
+.pill { padding: 6px 16px; font-size: 12px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.12); cursor: pointer; background: #fff; font-family: inherit; font-weight: 500; }
+.pill.on { background: #185FA5; color: #fff; border-color: #185FA5; }
+.note-area { width: 100%; min-height: 100px; padding: 10px 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 12px; font-family: inherit; resize: none; outline: none; background: #fff; }
+.note-hint { margin-top: 6px; font-size: 11px; color: #bbb; }
+
+/* CHATBOT */
+.chat-wrap { display: grid; grid-template-columns: 210px 1fr; height: 520px; }
+.chat-sidebar { background: #f5f5f3; border-right: 1px solid rgba(0,0,0,0.07); padding: 16px; }
+.chat-sidebar-title { font-size: 11px; font-weight: 700; margin-bottom: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+.chat-history-item { padding: 10px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; color: #555; margin-bottom: 4px; }
+.chat-history-item.active { background: #E6F1FB; color: #185FA5; font-weight: 700; }
+.chat-history-item:hover:not(.active) { background: rgba(0,0,0,0.04); }
+.new-chat-btn { width: 100%; padding: 10px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 16px; }
+.chat-main { display: flex; flex-direction: column; background: #fff; }
+.chat-header { padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.07); display: flex; align-items: center; gap: 12px; }
+.chat-bot-icon { width: 36px; height: 36px; border-radius: 50%; background: #185FA5; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.chat-header-name { font-size: 14px; font-weight: 700; }
+.chat-header-sub { font-size: 12px; color: #888; }
+.chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.msg { display: flex; gap: 10px; align-items: flex-end; }
+.msg.user { flex-direction: row-reverse; }
+.msg-bubble { max-width: 70%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.6; }
+.msg.bot .msg-bubble { background: #f5f5f3; color: #1a1a1a; border-radius: 4px 16px 16px 16px; }
+.msg.user .msg-bubble { background: #185FA5; color: #fff; border-radius: 16px 4px 16px 16px; }
+.msg-time { font-size: 10px; color: #ccc; margin-top: 4px; }
+.quick-btns { padding: 10px 20px; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid rgba(0,0,0,0.05); }
+.quick-btn { padding: 7px 14px; font-size: 12px; border-radius: 20px; border: 1px solid rgba(24,95,165,0.25); color: #185FA5; background: #E6F1FB; cursor: pointer; font-family: inherit; font-weight: 500; }
+.chat-input-row { padding: 12px 18px; border-top: 1px solid rgba(0,0,0,0.07); display: flex; gap: 10px; align-items: center; }
+.chat-input { flex: 1; padding: 10px 16px; border: 1px solid rgba(0,0,0,0.12); border-radius: 24px; font-size: 13px; font-family: inherit; background: #f5f5f3; color: #1a1a1a; outline: none; }
+.chat-send { width: 38px; height: 38px; border-radius: 50%; background: #185FA5; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; flex-shrink: 0; }
+
+/* MYPAGE */
+.mypage-wrap { padding: 24px 28px; display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+.mypage-profile { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 24px 20px; text-align: center; height: fit-content; }
+.profile-avatar { width: 70px; height: 70px; border-radius: 50%; background: #E6F1FB; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: #185FA5; margin: 0 auto 14px; }
+.profile-name { font-size: 19px; font-weight: 700; margin-bottom: 4px; }
+.profile-dept { font-size: 13px; color: #888; margin-bottom: 20px; }
+.pi-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 13px; }
+.pi-row:last-child { border-bottom: none; }
+.pi-label { color: #888; }
+.mypage-content { display: flex; flex-direction: column; gap: 16px; }
+.my-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 20px; }
+.cert-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.cert-item { background: #f5f5f3; border-radius: 10px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+.cert-icon { font-size: 24px; }
+.cert-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.cert-date { font-size: 11px; color: #888; margin-bottom: 6px; }
+.cert-dl { font-size: 12px; color: #185FA5; cursor: pointer; font-weight: 700; }
+.pw-form { display: flex; flex-direction: column; gap: 10px; }
+.pw-input { padding: 11px 14px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; outline: none; }
+.pw-save { padding: 11px 24px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; align-self: flex-start; }
+
+/* EXAM */
+.exam-wrap { padding: 24px 28px; max-width: 700px; }
+.exam-header { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.exam-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.exam-meta { font-size: 13px; color: #888; }
+.exam-timer { font-size: 22px; font-weight: 700; color: #A32D2D; }
+.question-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+.q-num { font-size: 12px; color: #185FA5; font-weight: 700; margin-bottom: 8px; }
+.q-text { font-size: 14px; font-weight: 600; margin-bottom: 16px; line-height: 1.6; }
+.option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 13px; }
+.option:hover { background: #f5f5f3; }
+.option.selected { border-color: #185FA5; background: #E6F1FB; color: #185FA5; font-weight: 600; }
+.option-num { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.option.selected .option-num { background: #185FA5; color: #fff; border-color: #185FA5; }
+.exam-submit { width: 100%; padding: 13px; background: #185FA5; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('login', this)">🔐 로그인</button>
+  <button class="tab-btn" onclick="showTab('main', this)">🏠 메인 홈</button>
+  <button class="tab-btn" onclick="showTab('catalog', this)">📚 수강신청</button>
+  <button class="tab-btn" onclick="showTab('video', this)">▶ 동영상 학습</button>
+  <button class="tab-btn" onclick="showTab('exam', this)">📝 시험</button>
+  <button class="tab-btn" onclick="showTab('chatbot', this)">💬 AI 챗봇</button>
+  <button class="tab-btn" onclick="showTab('mypage', this)">👤 마이페이지</button>
+</div>
+
+<!-- 로그인 -->
+<div id="page-login" class="page active">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">LMS</div>
+      <div class="login-company">사내 교육 플랫폼</div>
+      <label class="form-label">사원번호</label>
+      <input class="form-input" type="text" placeholder="사원번호를 입력하세요" />
+      <label class="form-label">비밀번호</label>
+      <input class="form-input" type="password" placeholder="비밀번호를 입력하세요" />
+      <button class="login-btn">로그인</button>
+      <div class="login-hint">초기 비밀번호는 사원번호와 동일합니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 홈 -->
+<div id="page-main" class="page">
+  <div class="nav">
+    <div class="nav-logo"><span>LMS</span> 사내교육</div>
+    <div class="nav-links">
+      <span class="nav-link active">홈</span>
+      <span class="nav-link">수강신청</span>
+      <span class="nav-link">내 학습</span>
+      <span class="nav-link">챗봇</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-user">홍길동 사원 (사무직)</span>
+      <div class="nav-avatar">홍</div>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="hero-label">MY LEARNING</div>
+    <div class="hero-title">안녕하세요, 홍길동 사원님 👋</div>
+    <div class="hero-sub">이번 달 필수 교육 2개가 남아있어요. 지금 바로 시작해보세요!</div>
+    <div class="hero-stats">
+      <div class="stat-card"><div class="stat-label">수강 중</div><div class="stat-val">3</div><div class="stat-sub">개 강의</div></div>
+      <div class="stat-card"><div class="stat-label">완료</div><div class="stat-val">7</div><div class="stat-sub">개 강의</div></div>
+      <div class="stat-card"><div class="stat-label">이수율</div><div class="stat-val">70%</div><div class="stat-sub">올해 기준</div></div>
+    </div>
+  </div>
+  <div class="main">
+    <div>
+      <div class="section-header">
+        <div class="section-title">수강 중인 교육</div>
+        <span class="see-all">전체보기 ›</span>
+      </div>
+      <div class="course-list">
+        <div class="course-card">
+          <div class="course-icon" style="background:#FCEBEB">📋</div>
+          <div class="course-info">
+            <div class="course-name">개인정보보호 교육 2025<span class="badge badge-required">필수</span></div>
+            <div class="course-meta">법정의무교육 · 마감 2025.05.31</div>
+            <div class="prog-bg"><div class="prog-bar" style="width:45%"></div></div>
+            <div class="prog-txt">45% 완료 · 남은 강의 3개</div>
+          </div>
+          <button class="action-btn primary">이어보기</button>
+        </div>
+        <div class="course-card">
+          <div class="course-icon" style="background:#E6F1FB">💼</div>
+          <div class="course-info">
+            <div class="course-name">비즈니스 문서 작성법<span class="badge badge-ongoing">수강 중</span></div>
+            <div class="course-meta">직무교육 · 사무직</div>
+            <div class="prog-bg"><div class="prog-bar" style="width:70%"></div></div>
+            <div class="prog-txt">70% 완료 · 남은 강의 1개</div>
+          </div>
+          <button class="action-btn primary">이어보기</button>
+        </div>
+        <div class="course-card">
+          <div class="course-icon" style="background:#FCEBEB">🛡️</div>
+          <div class="course-info">
+            <div class="course-name">직장 내 괴롭힘 예방 교육<span class="badge badge-required">필수</span></div>
+            <div class="course-meta">법정의무교육 · 마감 2025.06.30</div>
+            <div class="prog-bg"><div class="prog-bar" style="width:10%"></div></div>
+            <div class="prog-txt">10% 완료 · 남은 강의 4개</div>
+          </div>
+          <button class="action-btn">시작하기</button>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="side-card">
+        <div class="section-title">법정의무교육 현황</div>
+        <div class="mp-row"><span>성희롱 예방</span><span style="color:#3B6D11;font-weight:700">✓ 완료</span></div>
+        <div class="mp-bg"><div class="mp-fill" style="width:100%;background:#639922"></div></div>
+        <div class="mp-row"><span>개인정보보호</span><span>45%</span></div>
+        <div class="mp-bg"><div class="mp-fill" style="width:45%;background:#185FA5"></div></div>
+        <div class="mp-row"><span>직장 내 괴롭힘</span><span>10%</span></div>
+        <div class="mp-bg"><div class="mp-fill" style="width:10%;background:#185FA5"></div></div>
+        <div class="mp-row"><span>산업안전보건</span><span style="color:#A32D2D;font-weight:700">미시작</span></div>
+        <div class="mp-bg"><div class="mp-fill" style="width:2%;background:#E24B4A"></div></div>
+      </div>
+      <div class="side-card">
+        <div class="section-title">공지사항</div>
+        <div class="notice-item"><div class="notice-ttl">2025년 법정의무교육 이수 안내</div><div class="notice-date">2025.04.01</div></div>
+        <div class="notice-item"><div class="notice-ttl">신규 직무교육 강의 오픈</div><div class="notice-date">2025.03.20</div></div>
+        <div class="notice-item"><div class="notice-ttl">시스템 점검 안내 (4/15)</div><div class="notice-date">2025.03.15</div></div>
+      </div>
+      <div class="side-card">
+        <div class="section-title">AI 학습 도우미</div>
+        <p style="font-size:12px;color:#888;margin-bottom:12px;">교육 관련 궁금한 점을 챗봇에게 물어보세요.</p>
+        <button class="chatbot-btn">챗봇 시작하기 💬</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 수강신청 -->
+<div id="page-catalog" class="page">
+  <div class="nav">
+    <div class="nav-logo"><span>LMS</span> 사내교육</div>
+    <div class="nav-links"><span class="nav-link">홈</span><span class="nav-link active">수강신청</span><span class="nav-link">내 학습</span><span class="nav-link">챗봇</span></div>
+    <div class="nav-right"><span class="nav-user">홍길동 사원</span><div class="nav-avatar">홍</div></div>
+  </div>
+  <div class="catalog-wrap">
+    <div class="section-title">수강신청</div>
+    <div class="search-row">
+      <input class="search-input" placeholder="강의명으로 검색하세요..." />
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn on">전체</button>
+      <button class="filter-btn">법정의무교육</button>
+      <button class="filter-btn">직무교육</button>
+      <button class="filter-btn">리더십</button>
+      <button class="filter-btn">IT/디지털</button>
+      <button class="filter-btn">어학</button>
+    </div>
+    <div class="catalog-grid">
+      <div class="cat-card">
+        <div class="cat-thumb" style="background:#FCEBEB">📋</div>
+        <div class="cat-body">
+          <div class="cat-title">개인정보보호 교육<span class="badge badge-required">필수</span></div>
+          <div class="cat-meta">법정의무교육 · 60분 · 연 1회 필수</div>
+          <button class="cat-enroll">수강신청</button>
+        </div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-thumb" style="background:#EAF3DE">🛡️</div>
+        <div class="cat-body">
+          <div class="cat-title">성희롱 예방 교육<span class="badge badge-required">필수</span></div>
+          <div class="cat-meta">법정의무교육 · 60분 · 연 1회 필수</div>
+          <button class="cat-done">✓ 수강완료</button>
+        </div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-thumb" style="background:#E6F1FB">💼</div>
+        <div class="cat-body">
+          <div class="cat-title">비즈니스 문서 작성법<span class="badge badge-new">사무직</span></div>
+          <div class="cat-meta">직무교육 · 120분</div>
+          <button class="cat-enroll">수강신청</button>
+        </div>
+      </div>
+      <div class="cat-card">
+        <div class="cat-thumb" style="background:#EEEDFE">📊</div>
+        <div class="cat-body">
+          <div class="cat-title">Excel 실무 활용<span class="badge badge-new">사무직</span></div>
+          <div class="cat-meta">IT/디지털 · 90분</div>
+          <button class="cat-enroll">수강신청</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 동영상 학습 -->
+<div id="page-video" class="page">
+  <div class="video-player">
+    <div class="play-btn"><div class="play-icon"></div></div>
+    <div class="video-title-txt">개인정보보호 교육 2025 · 2강 — 개인정보 수집과 이용</div>
+  </div>
+  <div class="video-ctrl">
+    <div class="vp-bar-bg"><div class="vp-bar"></div></div>
+    <div class="vp-info"><span>12:34 / 29:50</span><span style="color:#185FA5;font-weight:600">42% 완료</span></div>
+  </div>
+  <div class="video-body">
+    <div class="playlist">
+      <div class="pl-header">강의 목록 (5강)</div>
+      <div class="pl-item"><span class="pl-num">1</span><div class="pl-info"><div class="pl-title">개인정보 개념과 법적 근거</div><div class="pl-dur">15:20</div></div><div class="pl-done">✓</div></div>
+      <div class="pl-item active"><span class="pl-num" style="color:#185FA5;font-weight:700">2</span><div class="pl-info"><div class="pl-title">개인정보 수집과 이용</div><div class="pl-dur">29:50</div></div></div>
+      <div class="pl-item"><span class="pl-num">3</span><div class="pl-info"><div class="pl-title">개인정보 보호 방법</div><div class="pl-dur">22:10</div></div></div>
+      <div class="pl-item"><span class="pl-num">4</span><div class="pl-info"><div class="pl-title">위반 사례와 처벌 규정</div><div class="pl-dur">18:40</div></div></div>
+      <div class="pl-item"><span class="pl-num" style="color:#A32D2D;font-weight:700">시험</span><div class="pl-info"><div class="pl-title">최종 평가</div><div class="pl-dur">10문항</div></div></div>
+    </div>
+    <div class="video-side">
+      <div class="tab-pills">
+        <button class="pill on">학습 노트</button>
+        <button class="pill">Q&A</button>
+      </div>
+      <textarea class="note-area" placeholder="이 강의에서 중요한 내용을 메모하세요..."></textarea>
+      <div class="note-hint">✓ 자동 저장됩니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- 시험 -->
+<div id="page-exam" class="page">
+  <div class="nav">
+    <div class="nav-logo"><span>LMS</span> 사내교육</div>
+    <div class="nav-right"><span class="nav-user">홍길동 사원</span><div class="nav-avatar">홍</div></div>
+  </div>
+  <div class="exam-wrap">
+    <div class="exam-header">
+      <div>
+        <div class="exam-title">개인정보보호 교육 — 최종 평가</div>
+        <div class="exam-meta">총 10문항 · 70점 이상 합격</div>
+      </div>
+      <div class="exam-timer">18:42</div>
+    </div>
+    <div class="question-card">
+      <div class="q-num">문제 1 / 10</div>
+      <div class="q-text">개인정보보호법에 따른 개인정보의 정의로 옳은 것은?</div>
+      <div class="option"><div class="option-num">1</div>성명, 주민등록번호 등 특정 개인을 알아볼 수 있는 정보</div>
+      <div class="option selected"><div class="option-num" style="background:#185FA5;color:#fff;border-color:#185FA5">2</div>살아 있는 개인에 관한 정보로서 특정 개인을 알아볼 수 있는 정보</div>
+      <div class="option"><div class="option-num">3</div>공공기관이 보유한 모든 정보</div>
+      <div class="option"><div class="option-num">4</div>인터넷에 공개된 개인에 관한 모든 정보</div>
+    </div>
+    <div class="question-card">
+      <div class="q-num">문제 2 / 10</div>
+      <div class="q-text">개인정보 처리자가 개인정보를 수집할 때 반드시 알려야 하는 사항이 아닌 것은?</div>
+      <div class="option"><div class="option-num">1</div>개인정보의 수집·이용 목적</div>
+      <div class="option"><div class="option-num">2</div>수집하려는 개인정보의 항목</div>
+      <div class="option"><div class="option-num">3</div>개인정보의 보유 및 이용 기간</div>
+      <div class="option"><div class="option-num">4</div>정보주체의 연소득</div>
+    </div>
+    <button class="exam-submit">다음 문제 →</button>
+  </div>
+</div>
+
+<!-- AI 챗봇 -->
+<div id="page-chatbot" class="page">
+  <div class="nav">
+    <div class="nav-logo"><span>LMS</span> 사내교육</div>
+    <div class="nav-links"><span class="nav-link">홈</span><span class="nav-link">수강신청</span><span class="nav-link">내 학습</span><span class="nav-link active">챗봇</span></div>
+    <div class="nav-right"><span class="nav-user">홍길동 사원</span><div class="nav-avatar">홍</div></div>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-sidebar">
+      <button class="new-chat-btn">+ 새 대화</button>
+      <div class="chat-sidebar-title">최근 대화</div>
+      <div class="chat-history-item active">필수 교육 이수 방법</div>
+      <div class="chat-history-item">수강신청 기간 문의</div>
+      <div class="chat-history-item">수료증 발급 방법</div>
+      <div class="chat-history-item">시험 재응시 문의</div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-header">
+        <div class="chat-bot-icon">AI</div>
+        <div>
+          <div class="chat-header-name">LMS 학습 도우미</div>
+          <div class="chat-header-sub">교육 관련 모든 것을 도와드려요</div>
+        </div>
+      </div>
+      <div class="chat-messages">
+        <div class="msg bot">
+          <div class="chat-bot-icon" style="width:30px;height:30px;font-size:11px">AI</div>
+          <div>
+            <div class="msg-bubble">안녕하세요, 홍길동 사원님! LMS 학습 도우미입니다. 교육 수강, 이수 현황, 수료증 발급 등 무엇이든 물어보세요 😊</div>
+            <div class="msg-time">14:20</div>
+          </div>
+        </div>
+        <div class="msg user">
+          <div class="nav-avatar" style="width:30px;height:30px">홍</div>
+          <div>
+            <div class="msg-bubble">올해 필수 교육 뭐 들어야 해요?</div>
+            <div class="msg-time">14:21</div>
+          </div>
+        </div>
+        <div class="msg bot">
+          <div class="chat-bot-icon" style="width:30px;height:30px;font-size:11px">AI</div>
+          <div>
+            <div class="msg-bubble">홍길동 사원님은 올해 아직 3개의 필수 교육이 남아있어요.<br><br>· 개인정보보호 교육 (마감 5/31)<br>· 직장 내 괴롭힘 예방 (마감 6/30)<br>· 산업안전보건 교육 (마감 8/31)<br><br>지금 바로 수강하시겠어요?</div>
+            <div class="msg-time">14:21</div>
+          </div>
+        </div>
+      </div>
+      <div class="quick-btns">
+        <button class="quick-btn">수강신청 바로가기</button>
+        <button class="quick-btn">수료증 발급</button>
+        <button class="quick-btn">이수 현황 보기</button>
+        <button class="quick-btn">시험 재응시</button>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" placeholder="궁금한 점을 입력하세요..." />
+        <button class="chat-send">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 마이페이지 -->
+<div id="page-mypage" class="page">
+  <div class="nav">
+    <div class="nav-logo"><span>LMS</span> 사내교육</div>
+    <div class="nav-right"><span class="nav-user">홍길동 사원</span><div class="nav-avatar">홍</div></div>
+  </div>
+  <div class="mypage-wrap">
+    <div class="mypage-profile">
+      <div class="profile-avatar">홍</div>
+      <div class="profile-name">홍길동</div>
+      <div class="profile-dept">사무직 · 개발팀</div>
+      <div>
+        <div class="pi-row"><span class="pi-label">사원번호</span><span>20240123</span></div>
+        <div class="pi-row"><span class="pi-label">입사일</span><span>2024.01.15</span></div>
+        <div class="pi-row"><span class="pi-label">직종</span><span>사무직</span></div>
+        <div class="pi-row"><span class="pi-label">이수율</span><span style="color:#185FA5;font-weight:700">70%</span></div>
+        <div class="pi-row"><span class="pi-label">수료 강의</span><span>7개</span></div>
+      </div>
+    </div>
+    <div class="mypage-content">
+      <div class="my-card">
+        <div class="section-title">수료증 목록</div>
+        <div class="cert-grid">
+          <div class="cert-item"><div class="cert-icon">🏅</div><div><div class="cert-name">성희롱 예방 교육</div><div class="cert-date">2025.03.10 수료</div><div class="cert-dl">⬇ 다운로드</div></div></div>
+          <div class="cert-item"><div class="cert-icon">🏅</div><div><div class="cert-name">신입사원 온보딩</div><div class="cert-date">2024.02.05 수료</div><div class="cert-dl">⬇ 다운로드</div></div></div>
+          <div class="cert-item"><div class="cert-icon">🏅</div><div><div class="cert-name">직무 기초 교육</div><div class="cert-date">2024.03.20 수료</div><div class="cert-dl">⬇ 다운로드</div></div></div>
+        </div>
+      </div>
+      <div class="my-card">
+        <div class="section-title">비밀번호 변경</div>
+        <div class="pw-form">
+          <input class="pw-input" type="password" placeholder="현재 비밀번호" />
+          <input class="pw-input" type="password" placeholder="새 비밀번호 (영문+숫자+특수문자 8자 이상)" />
+          <input class="pw-input" type="password" placeholder="새 비밀번호 확인" />
+          <button class="pw-save">변경하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
