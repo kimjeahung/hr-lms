@@ -3,6 +3,7 @@ package com.hr.backend.domain.notice.repository;
 import com.hr.backend.domain.notice.entity.Notice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,5 +14,5 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Notice> findAllWithAuthor();
 
     @Query("SELECT n FROM Notice n JOIN FETCH n.author WHERE n.noticeId = :id")
-    Optional<Notice> findByIdWithAuthor(Long id);
+    Optional<Notice> findByIdWithAuthor(@Param("id") Long id);
 }

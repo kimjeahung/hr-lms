@@ -33,11 +33,11 @@ public class EnrollmentController {
         return ResponseEntity.ok(enrollmentService.getByCourse(courseId));
     }
 
-    // 수강 등록
+    // 수강 등록 (차수 기반)
     @PostMapping
     public ResponseEntity<EnrollmentResponse> enroll(
-            @RequestParam Long userId, @RequestParam Long courseId) {
-        return ResponseEntity.ok(enrollmentService.enroll(userId, courseId));
+            @RequestParam Long userId, @RequestParam Long roundId) {
+        return ResponseEntity.ok(enrollmentService.enroll(userId, roundId));
     }
 
     // 진행률 업데이트

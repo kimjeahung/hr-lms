@@ -28,11 +28,12 @@ CREATE TABLE users (
     department_id   INT          NOT NULL,
     position        VARCHAR(50)  NOT NULL,              -- 직급
     emp_type        TINYINT      NOT NULL DEFAULT 0,    -- 0=사무직, 1=현장직
-    role            VARCHAR(20)  NOT NULL DEFAULT 'ROLE_USER',
-    phone           VARCHAR(20)  NULL,
-    hire_date       DATE         NOT NULL,
-    is_active       TINYINT(1)   NOT NULL DEFAULT 1,
-    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    role                VARCHAR(20)  NOT NULL DEFAULT 'ROLE_USER',
+    phone               VARCHAR(20)  NULL,
+    hire_date           DATE         NOT NULL,
+    is_active           TINYINT(1)   NOT NULL DEFAULT 1,
+    password_changed    TINYINT(1)   NOT NULL DEFAULT 0,   -- 초기 비밀번호(사번) 변경 여부
+    created_at          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id),
     UNIQUE KEY uq_employee_no (employee_no),
