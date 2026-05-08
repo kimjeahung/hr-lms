@@ -1,11 +1,19 @@
 package com.hr.backend.domain.enrollment.controller;
 
 import com.hr.backend.admin.dto.EnrollmentResponse;
+import com.hr.backend.domain.enrollment.dto.EnrollmentScheduleResponse;
+import com.hr.backend.domain.enrollment.entity.Enrollment;
 import com.hr.backend.domain.enrollment.service.EnrollmentService;
+import com.hr.backend.domain.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -14,6 +22,10 @@ import java.util.List;
 public class EnrollmentUserController {
 
     private final EnrollmentService enrollmentService;
+    private final EntityManager entityManager;
+    private final UserRepository userRepository;
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // 수강 신청 - 신청 즉시 IN_PROGRESS
     @PostMapping
@@ -26,18 +38,21 @@ public class EnrollmentUserController {
     // 본인 수강 이력 조회
     @GetMapping("/history/{userId}")
     public ResponseEntity<List<EnrollmentResponse>> enrollmentHistory(@PathVariable Long userId) {
-        return ResponseEntity.ok(enrollmentService.getByUser(userId));
+        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return ResponseEntity.ok(enrollmentService.getHistoryByUser(userId));
     }
 
     // 본인 전체 수강 내역 조회
     @GetMapping("/all/{userId}")
     public ResponseEntity<List<EnrollmentResponse>> getALLEnrollmentsByUser(@PathVariable Long userId) {
+        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         return ResponseEntity.ok(enrollmentService.getByUser(userId));
     }
 
     // 본인 수강중인 교육 조회
     @GetMapping("/ongoing/{userId}")
     public ResponseEntity<List<EnrollmentResponse>> getOngoingEnrollments(@PathVariable Long userId) {
+        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         return ResponseEntity.ok(enrollmentService.getOngoingEnrollments(userId));
     }
 
@@ -78,5 +93,57 @@ public class EnrollmentUserController {
     }
 
     // 수강 캘린더(수강신청스케줄)
+    @GetMapping("/{enrollmentId}/schedule")
+    public ResponseEntity<String> getEnrollmentSchedule(@PathVariable Long enrollmentId) {
+        return ResponseEntity.ok("수강 일정 정보입니다.");
+    }
 
+    // 수강 캘린더 상세 (기존 /schedule 유지, 신규 확장 API)
+    @GetMapping("/{enrollmentId}/schedule/detail")
+    public ResponseEntity<EnrollmentScheduleResponse> getEnrollmentScheduleDetail(@PathVariable Long enrollmentId) {
+        Enrollment enrollment = findEnrollmentWithRound(enrollmentId);
+
+        Integer durationMin = enrollment.getRound().getCourse().getDurationMin();
+        int hours = (durationMin == null || durationMin <= 0) ? 0 : durationMin / 60;
+
+        EnrollmentScheduleResponse response = EnrollmentScheduleResponse.builder()
+                .enrollmentId(enrollment.getEnrollmentId())
+                .userId(enrollment.getUser().getUserId())
+                .userName(enrollment.getUser().getName())
+                .roundId(enrollment.getRound().getRoundId())
+                .roundNo(enrollment.getRound().getRoundNo())
+                .courseId(enrollment.getRound().getCourse().getCourseId())
+                .courseTitle(enrollment.getRound().getCourse().getTitle())
+                .startDate(enrollment.getRound().getStartDate().format(DATE_FORMATTER))
+                .endDate(enrollment.getRound().getEndDate().format(DATE_FORMATTER))
+                .durationMin(durationMin)
+                .trainingHours(hours)
+                .status(enrollment.getStatus().name())
+                .progress(enrollment.getProgress())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    private Long getLoginUserId() {
+        String employeeNo = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userRepository.findByEmployeeNo(employeeNo)
+                .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."))
+                .getUserId();
+    }
+
+    private Enrollment findEnrollmentWithRound(Long enrollmentId) {
+        try {
+            return entityManager.createQuery(
+                            "select e from Enrollment e " +
+                                    "join fetch e.user u " +
+                                    "join fetch e.round r " +
+                                    "join fetch r.course c " +
+                                    "where e.enrollmentId = :id", Enrollment.class)
+                    .setParameter("id", enrollmentId)
+                    .getSingleResult();
+        } catch (NoResultException ex) {
+            throw new IllegalArgumentException("수강 정보를 찾을 수 없습니다.");
+        }
+    }
 }
