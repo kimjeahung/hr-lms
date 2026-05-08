@@ -76,4 +76,7 @@ public class EnrollmentUserController {
             @RequestParam boolean enabled) {
         return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
     }
+
+    // 수강 캘린더(수강신청스케줄)
+
 }
