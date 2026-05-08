@@ -8,7 +8,6 @@ import com.hr.backend.domain.user.service.PasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,9 +25,9 @@ public class AuthController {
 
     @PutMapping("/password")
     public ResponseEntity<Void> changePassword(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String employeeNo,
             @RequestBody ChangePasswordRequest req) {
-        passwordService.changePassword(userDetails.getUsername(), req);
+        passwordService.changePassword(employeeNo, req);
         return ResponseEntity.noContent().build();
     }
 }
