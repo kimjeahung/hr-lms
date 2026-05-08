@@ -6,7 +6,6 @@ import com.hr.backend.domain.notice.service.NoticeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,9 +29,9 @@ public class NoticeController {
 
     @PostMapping
     public ResponseEntity<NoticeResponse> create(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String employeeNo,
             @RequestBody NoticeRequest req) {
-        return ResponseEntity.ok(noticeService.create(userDetails.getUsername(), req));
+        return ResponseEntity.ok(noticeService.create(employeeNo, req));
     }
 
     @PutMapping("/{id}")
