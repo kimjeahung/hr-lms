@@ -4,7 +4,6 @@ import com.hr.backend.admin.dto.EnrollmentResponse;
 import com.hr.backend.domain.course.entity.CourseRound;
 import com.hr.backend.domain.course.repository.CourseRoundRepository;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
-import com.hr.backend.domain.enrollment.enums.EnrollmentStatus;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
 import com.hr.backend.domain.user.entity.User;
 import com.hr.backend.domain.user.repository.UserRepository;
@@ -12,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,7 @@ public class EnrollmentService {
                 .toList();
     }
 
-    /** 수강 등록 (차수 기반, 신청 즉시 APPROVED) */
+    /** 수강 등록 (관리자용 - 차수 기반, 신청 즉시 APPROVED + IN_PROGRESS) */
     @Transactional
     public EnrollmentResponse enroll(Long userId, Long roundId) {
         if (enrollmentRepository.existsByUser_UserIdAndRound_RoundId(userId, roundId)) {
@@ -62,7 +61,27 @@ public class EnrollmentService {
                 .user(user)
                 .round(round)
                 .build();
-        enrollment.approve(); // 신청 즉시 승인
+        enrollment.approve();
+        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
+        return new EnrollmentResponse(enrollmentRepository.save(enrollment));
+    }
+
+    /** 수강 신청 (사용자용 - 신청 즉시 IN_PROGRESS, 승인 절차 없음) */
+    @Transactional
+    public EnrollmentResponse applyEnrollment(Long userId, Long roundId) {
+        if (enrollmentRepository.existsByUser_UserIdAndRound_RoundId(userId, roundId)) {
+            throw new IllegalArgumentException("이미 수강 신청된 차수입니다.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("직원을 찾을 수 없습니다."));
+        CourseRound round = courseRoundRepository.findById(roundId)
+                .orElseThrow(() -> new IllegalArgumentException("차수를 찾을 수 없습니다."));
+
+        Enrollment enrollment = Enrollment.builder()
+                .user(user)
+                .round(round)
+                .build();
+        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
         return new EnrollmentResponse(enrollmentRepository.save(enrollment));
     }
 
@@ -75,120 +94,61 @@ public class EnrollmentService {
         return new EnrollmentResponse(enrollment);
     }
 
-    //
-     //수강 신청
-    @Transactional
-    public EnrollmentResponse registerCourse(Long userId, Long courseId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        Courses course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의입니다."));
-
-        if (enrollmentRepository.existsByUser_idAndCourse_id(user, course)) {
-            throw new IllegalStateException("이미 수강 신청된 강의입니다.");
-        }
-
-        Enrollment enrollment = new Enrollment();
-        enrollment.setUser_id(user);
-        enrollment.setCourse_id(course);
-        enrollment.setProgress(0);
-        enrollment.setStatus(EnrollmentStatus.IN_PROGRESS.name());
-        enrollment.setStarted_at(new Date());
-
-        return enrollmentRepository.save(enrollment);
-    }
-
-    //수강 이력 조회
-    @Transactional(readOnly = true)
-    public List<Enrollment> getEnrollmentHistory(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return enrollmentRepository.findByUser_id(user);
-    }
-
-    //수강 진행 관리
-    @Transactional
-    public Enrollment manageCourseSessions(Long enrollmentId, int progress) {
+    /** 수강 상세 조회 */
+    public EnrollmentResponse getEnrollmentById(Long enrollmentId) {
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
-
-        enrollment.setProgress(progress);
-        if (progress >= 100) {
-            enrollment.setStatus(EnrollmentStatus.DONE.name());
-            enrollment.setCompleted_at(new Date());
-        } else {
-            enrollment.setStatus(EnrollmentStatus.IN_PROGRESS.name());
-        }
-
-        return enrollmentRepository.save(enrollment);
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        return new EnrollmentResponse(enrollment);
     }
 
-    //수강 일정 관리
+    /** 수강 완료 처리 */
     @Transactional
-    public Course manageEnrollmentSchedule(Long courseId, Date deadline) {
-        Course course = courseRepository.findById(courseId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 강의입니다."));
-
-        course.setDeadline(deadline);
-        return courseRepository.save(course);
-    }
-
-    //수강 상세 조회
-    @Transactional(readOnly = true)
-    public Enrollment getEnrollmentById(Long enrollmentId) {
-        return enrollmentRepository.findById(enrollmentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
-    }
-
-    //수강 완료 처리
-    @Transactional
-    public Enrollment completeEnrollment(Long enrollmentId) {
+    public EnrollmentResponse completeEnrollment(Long enrollmentId) {
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
-        enrollment.setProgress(100);
-        enrollment.setStatus(EnrollmentStatus.DONE.name());
-        enrollment.setCompleted_at(new Date());
-        return enrollmentRepository.save(enrollment);
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        enrollment.updateProgress(100);
+        return new EnrollmentResponse(enrollment);
     }
 
-    //수강 상태 변경
+    /** 수강 상태 변경 */
     @Transactional
-    public Enrollment changeEnrollmentStatus(Long enrollmentId, String status) {
+    public EnrollmentResponse changeEnrollmentStatus(Long enrollmentId, String status) {
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
         try {
-            EnrollmentStatus.valueOf(status);
+            Enrollment.Status newStatus = Enrollment.Status.valueOf(status);
+            enrollment.changeStatus(newStatus);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 상태값입니다. 유효한 값: " + java.util.Arrays.toString(EnrollmentStatus.values()));
+            throw new IllegalArgumentException("유효하지 않은 상태값입니다. 유효한 값: " + java.util.Arrays.toString(Enrollment.Status.values()));
         }
-        enrollment.setStatus(status);
-        return enrollmentRepository.save(enrollment);
+        return new EnrollmentResponse(enrollment);
     }
 
-    //수강중인 교육 조회
-    @Transactional(readOnly = true)
-    public List<Enrollment> getOngoingEnrollments(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return enrollmentRepository.findByUser_idAndStatus(user, EnrollmentStatus.IN_PROGRESS.name());
+    /** 수강중인 교육 조회 */
+    public List<EnrollmentResponse> getOngoingEnrollments(Long userId) {
+        return enrollmentRepository.findAllByUserId(userId).stream()
+                .filter(e -> e.getStatus() == Enrollment.Status.IN_PROGRESS)
+                .map(EnrollmentResponse::new)
+                .toList();
     }
 
-    //특정 유저 수강 내역 조회(본인수강 내역 조회)
-    @Transactional(readOnly = true)
-    public List<Enrollment> getALLEnrollmentsByUser(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        return enrollmentRepository.findByUser_id(user);
-    }
-
-    //수강 통계 조회
-    @Transactional(readOnly = true)
+    /** 수강 통계 조회 */
     public Map<String, Object> getEnrollmentStatistics() {
+        List<Enrollment> all = enrollmentRepository.findAll();
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", enrollmentRepository.count());
-        stats.put("notStarted", enrollmentRepository.countByStatus(EnrollmentStatus.NOT_STARTED.name()));
-        stats.put("inProgress", enrollmentRepository.countByStatus(EnrollmentStatus.IN_PROGRESS.name()));
-        stats.put("completed", enrollmentRepository.countByStatus(EnrollmentStatus.DONE.name()));
+        stats.put("total", (long) all.size());
+        stats.put("notStarted", all.stream().filter(e -> e.getStatus() == Enrollment.Status.NOT_STARTED).count());
+        stats.put("inProgress", all.stream().filter(e -> e.getStatus() == Enrollment.Status.IN_PROGRESS).count());
+        stats.put("completed", all.stream().filter(e -> e.getStatus() == Enrollment.Status.DONE).count());
         return stats;
+    }
+
+    /** 차수 일정 변경 (마감일 업데이트) */
+    @Transactional
+    public CourseRound updateRoundSchedule(Long roundId, LocalDate endDate) {
+        CourseRound round = courseRoundRepository.findById(roundId)
+                .orElseThrow(() -> new IllegalArgumentException("차수를 찾을 수 없습니다."));
+        round.update(round.getStartDate(), endDate);
+        return courseRoundRepository.save(round);
     }
 }

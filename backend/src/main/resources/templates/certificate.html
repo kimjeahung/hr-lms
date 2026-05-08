@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>교육 이수증</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #f3f4f6;
+      font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      color: #111827;
+    }
+    .certificate {
+      width: 1000px;
+      min-height: 700px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 54px;
+      border: 14px solid #1f2937;
+      position: relative;
+    }
+    .certificate::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 2px solid #9ca3af;
+      pointer-events: none;
+    }
+    .certificate-inner {
+      position: relative;
+      z-index: 1;
+      min-height: 580px;
+      padding: 20px 34px;
+    }
+    .certificate-no { text-align: right; font-size: 15px; color: #4b5563; margin-bottom: 28px; }
+    .title-area { text-align: center; margin-bottom: 48px; }
+    .sub-title { font-size: 18px; letter-spacing: 6px; color: #6b7280; margin-bottom: 12px; }
+    .main-title { font-size: 52px; font-weight: 800; letter-spacing: 14px; margin: 0; }
+    .info-box {
+      width: 78%; margin: 0 auto 44px; border-top: 2px solid #111827; border-bottom: 2px solid #111827; padding: 24px 10px;
+    }
+    .info-row { display: flex; align-items: center; min-height: 42px; font-size: 20px; }
+    .info-label { width: 150px; font-weight: 700; color: #374151; }
+    .info-value { flex: 1; font-weight: 500; }
+    .content { width: 82%; margin: 0 auto; font-size: 22px; line-height: 1.9; text-align: center; word-break: keep-all; }
+    .date { margin-top: 44px; text-align: center; font-size: 20px; font-weight: 600; }
+    .issuer { margin-top: 36px; text-align: center; }
+    .issuer-name { font-size: 26px; font-weight: 800; letter-spacing: 3px; }
+    .stamp {
+      display: inline-flex; justify-content: center; align-items: center; width: 92px; height: 92px; margin-left: 20px;
+      border: 4px double #b91c1c; border-radius: 50%; color: #b91c1c; font-size: 18px; font-weight: 900;
+      line-height: 1.2; vertical-align: middle; transform: rotate(-8deg); opacity: 0.9; position: relative;
+      text-align: center; letter-spacing: 2px;
+    }
+    .stamp::before {
+      content: ""; position: absolute; inset: 8px; border: 2px solid #b91c1c; border-radius: 50%; }
+    .stamp::after {
+      content: "CERTIFIED"; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      font-size: 8px; letter-spacing: 1px; color: #b91c1c;
+    }
+    .footer {
+      position: absolute; left: 88px; right: 88px; bottom: 42px; display: flex; justify-content: space-between;
+      align-items: center; font-size: 13px; color: #6b7280;
+    }
+    .watermark {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 120px; font-weight: 900;
+      color: rgba(31, 41, 55, 0.05); white-space: nowrap; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="certificate">
+  <div class="watermark">CERTIFICATE</div>
+  <div class="certificate-inner">
+    <div class="certificate-no">증서번호: <span th:text="${certificateNo}"></span></div>
+    <div class="title-area">
+      <div class="sub-title">EDUCATION CERTIFICATE</div>
+      <h1 class="main-title">이 수 증</h1>
+    </div>
+    <div class="info-box">
+      <div class="info-row"><div class="info-label">성명</div><div class="info-value" th:text="${userName}"></div></div>
+      <div class="info-row"><div class="info-label">소속</div><div class="info-value" th:text="${department}"></div></div>
+      <div class="info-row"><div class="info-label">교육명</div><div class="info-value" th:text="${courseTitle}"></div></div>
+      <div class="info-row"><div class="info-label">교육기간</div><div class="info-value"><span th:text="${startDate}"></span> ~ <span th:text="${endDate}"></span></div></div>
+      <div class="info-row"><div class="info-label">교육시간</div><div class="info-value"><span th:text="${trainingHours}"></span>시간</div></div>
+    </div>
+    <div class="content">
+      위 사람은 <strong th:text="${courseTitle}"></strong> 교육과정을 성실히 이수하였기에
+      관계 규정 및 교육 운영 기준에 따라 이 증서를 수여합니다.
+    </div>
+    <div class="date" th:text="${issuedAt}"></div>
+    <div class="issuer">
+      <span class="issuer-name" th:text="${issuerName}"></span>
+      <span class="stamp">교육<br />기관</span>
+    </div>
+  </div>
+  <div class="footer">
+    <div>인사하는 인사팀</div>
+    <div>본 증서는 교육 이수 사실 확인을 목적으로 발급되었습니다.</div>
+  </div>
+</div>
+</body>
+</html>

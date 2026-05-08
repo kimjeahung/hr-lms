@@ -87,4 +87,8 @@ public class Enrollment {
             this.completedAt = LocalDateTime.now();
         }
     }
+
+    public void changeStatus(Status status) {
+        this.status = status;
+    }
 }

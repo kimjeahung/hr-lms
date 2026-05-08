@@ -1,16 +1,16 @@
 package com.hr.backend.admin.controller;
 
 import com.hr.backend.admin.dto.EnrollmentResponse;
+import com.hr.backend.domain.course.entity.CourseRound;
 import com.hr.backend.domain.enrollment.service.EnrollmentService;
-import com.hr.backend.domain.enrollments.entity.Enrollments;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/enrollments")
@@ -51,48 +51,12 @@ public class EnrollmentController {
         return ResponseEntity.ok(enrollmentService.updateProgress(enrollmentId, progress));
     }
 
-    //
-
-     // 수강 신청
-    @PostMapping
-    public ResponseEntity<EnrollmentResponse> enrollments(
-            @RequestParam Long userId,
-            @RequestParam Long courseId) {
-        return ResponseEntity.ok(enrollmentService.registerCourse(userId, courseId));
-    }
-
-    // 수강 이력 조회
-    @GetMapping("/history/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> enrollmentHistory(@PathVariable Long userId) {
-        return ResponseEntity.ok(enrollmentService.getEnrollmentHistory(userId));
-    }
-
-    // 수강 진행 관리
-    @PutMapping("/{enrollmentId}/progress")
-    public ResponseEntity<EnrollmentResponse> manageCourseSessions(
-            @PathVariable Long enrollmentId,
-            @RequestParam int progress) {
-        return ResponseEntity.ok(enrollmentService.manageCourseSessions(enrollmentId, progress));
-    }
-
-    // 수강 상세조회
-    @GetMapping("/{enrollmentId}")
-    public ResponseEntity<EnrollmentResponse> getEnrollmentDetails(@PathVariable Long enrollmentId) {
-        return ResponseEntity.ok(enrollmentService.getEnrollmentById(enrollmentId));
-    }
-
-    // 수강 일정 관리
-    @PutMapping("/schedule/{courseId}")
-    public ResponseEntity<Courses> manageEnrollmentSchedule(
-            @PathVariable Long courseId,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date deadline) {
-        return ResponseEntity.ok(enrollmentService.manageEnrollmentSchedule(courseId, deadline));
-    }
-
-    // 수강 완료 처리
-    @PutMapping("/{enrollmentId}/complete")
-    public ResponseEntity<EnrollmentResponse> completeEnrollment(@PathVariable Long enrollmentId) {
-        return ResponseEntity.ok(enrollmentService.completeEnrollment(enrollmentId));
+    // 수강 일정 관리 (차수 마감일 변경)
+    @PutMapping("/schedule/{roundId}")
+    public ResponseEntity<CourseRound> manageEnrollmentSchedule(
+            @PathVariable Long roundId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(enrollmentService.updateRoundSchedule(roundId, endDate));
     }
 
     // 수강 상태 변경 (NOT_STARTED, IN_PROGRESS, DONE)
@@ -107,33 +71,5 @@ public class EnrollmentController {
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Object>> getEnrollmentStatistics() {
         return ResponseEntity.ok(enrollmentService.getEnrollmentStatistics());
-    }
-
-    // 수강 피드백 제출
-    @PostMapping("/{enrollmentId}/feedback")
-    public ResponseEntity<String> submitEnrollmentFeedback(
-            @PathVariable Long enrollmentId,
-            @RequestParam String feedback) {
-        return ResponseEntity.ok("피드백이 제출되었습니다.");
-    }
-
-    // 수강 알림 설정
-    @PostMapping("/{enrollmentId}/notifications")
-    public ResponseEntity<String> setEnrollmentNotifications(
-            @PathVariable Long enrollmentId,
-            @RequestParam boolean enabled) {
-        return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
-    }
-
-    // 수강중인 교육 조회
-    @GetMapping("/ongoing/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> getOngoingEnrollments(@PathVariable Long userId) {
-        return ResponseEntity.ok(enrollmentService.getOngoingEnrollments(userId));
-    }
-
-    //특정 유저 수강 내역 조회(본인수강 내역 조회)
-    @GetMapping("/all/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> getALLEnrollmentsByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(enrollmentService.getALLEnrollmentsByUser(userId));
     }
 }

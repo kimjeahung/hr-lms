@@ -34,6 +34,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       AI_SERVER_URL: ${AI_SERVER_URL:-http://ai:5000}
       JWT_SECRET: ${JWT_SECRET}
+      CERTIFICATE_STORAGE_PATH: ${CERTIFICATE_STORAGE_PATH:-/app/certificates}
+      BACKEND_N8N_TRIGGER_URL: ${BACKEND_N8N_TRIGGER_URL:-http://n8n:5678/webhook/certificate}
+      CERTIFICATE_ISSUER_NAME: ${CERTIFICATE_ISSUER_NAME:-인사하는 인사팀}
+    volumes:
+      - certificate-storage:/app/certificates
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health >/dev/null || exit 1"]
@@ -64,7 +69,7 @@ services:
       N8N_HOST: ${N8N_HOST:-0.0.0.0}
       N8N_PORT: 5678
       N8N_PROTOCOL: http
-      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://192.168.2.46:5678}
+      WEBHOOK_URL: ${N8N_PUBLIC_WEBHOOK_BASE_URL:-http://192.168.2.46:5678}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me-32-char-encryption-key}
       GENERIC_TIMEZONE: Asia/Seoul
       TZ: Asia/Seoul
@@ -78,3 +83,4 @@ services:
 
 volumes:
   n8n_data:
+  certificate-storage:

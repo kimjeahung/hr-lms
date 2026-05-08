@@ -48,4 +48,8 @@ public class Certificate {
         this.round   = round;
         this.fileUrl = fileUrl;
     }
+
+    public void updateFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
 }
