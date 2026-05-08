@@ -61,7 +61,7 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(enrollmentService.completeEnrollment(enrollmentId));
     }
 
-    // 수강 피드백 제출
+    // 수강 피드백 제출 // 실제로는 피드백 DTO를 만들어서 받는 것이 좋지만, 간단히 String으로 받도록 했습니다. 추후 변경
     @PostMapping("/{enrollmentId}/feedback")
     public ResponseEntity<String> submitEnrollmentFeedback(
             @PathVariable Long enrollmentId,
@@ -69,11 +69,14 @@ public class EnrollmentUserController {
         return ResponseEntity.ok("피드백이 제출되었습니다.");
     }
 
-    // 수강 알림 설정
+    // 수강 알림 설정// 실제로는 알림 설정 DTO를 만들어서 받는 것이 좋지만, 간단히 boolean으로 받도록 했습니다. 추후 변경
     @PostMapping("/{enrollmentId}/notifications")
     public ResponseEntity<String> setEnrollmentNotifications(
             @PathVariable Long enrollmentId,
             @RequestParam boolean enabled) {
         return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
     }
+
+    // 수강 캘린더(수강신청스케줄)
+
 }
