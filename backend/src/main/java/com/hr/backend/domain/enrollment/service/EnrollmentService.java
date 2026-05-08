@@ -39,6 +39,14 @@ public class EnrollmentService {
                 .toList();
     }
 
+    /** 특정 직원 이수 이력 (완료된 강좌만) */
+    public List<EnrollmentResponse> getHistoryByUser(Long userId) {
+        return enrollmentRepository.findAllByUserId(userId).stream()
+                .filter(e -> e.getStatus() == Enrollment.Status.DONE)
+                .map(EnrollmentResponse::new)
+                .toList();
+    }
+
     /** 특정 차수 수강자 현황 */
     public List<EnrollmentResponse> getByCourse(Long courseId) {
         return enrollmentRepository.findAllByCourseId(courseId).stream()
@@ -151,4 +159,5 @@ public class EnrollmentService {
         round.update(round.getStartDate(), endDate);
         return courseRoundRepository.save(round);
     }
+
 }
