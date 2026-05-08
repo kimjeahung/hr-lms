@@ -25,7 +25,7 @@ public class AuthService {
             throw new IllegalArgumentException("사원번호 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        String role  = user.getRole().name();
+        String role  = user.getRole();
         String token = jwtProvider.generate(user.getEmployeeNo(), role);
 
         return new LoginResponse(token, user.getName(), role, user.isPasswordChanged());
