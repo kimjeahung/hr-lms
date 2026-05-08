@@ -54,4 +54,9 @@ public class CourseRound {
         LocalDate today = LocalDate.now();
         return !today.isBefore(startDate) && !today.isAfter(endDate);
     }
+
+    public void update(LocalDate startDate, LocalDate endDate) {
+        this.startDate = startDate;
+        this.endDate   = endDate;
+    }
 }

@@ -35,7 +35,7 @@ public class CourseService {
                 .category(req.getCategory())
                 .targetRole(req.getTargetRole())
                 .durationMin(req.getDurationMin())
-                .deadline(req.getDeadline())
+                .thumbnailUrl(req.getThumbnailUrl())
                 .build();
         return new CourseResponse(courseRepository.save(course));
     }
@@ -44,18 +44,18 @@ public class CourseService {
     public CourseResponse update(Long id, CourseRequest req) {
         Course course = findById(id);
         course.update(req.getTitle(), req.getDescription(), req.getCategory(),
-                req.getTargetRole(), req.getDurationMin(), req.getDeadline());
+                req.getTargetRole(), req.getDurationMin(), req.getThumbnailUrl());
         return new CourseResponse(course);
     }
 
     @Transactional
     public void delete(Long id) {
         Course course = findById(id);
-        course.deactivate(); // soft delete
+        course.deactivate();
     }
 
     private Course findById(Long id) {
         return courseRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("강의를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("강좌를 찾을 수 없습니다."));
     }
 }

@@ -9,16 +9,16 @@ import java.util.Optional;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.course WHERE e.user.id = :userId")
+    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.round WHERE e.user.userId = :userId")
     List<Enrollment> findAllByUserId(Long userId);
 
-    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.course WHERE e.course.courseId = :courseId")
+    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.round r JOIN FETCH r.course WHERE r.course.courseId = :courseId")
     List<Enrollment> findAllByCourseId(Long courseId);
 
-    Optional<Enrollment> findByUser_IdAndCourse_CourseId(Long userId, Long courseId);
+    Optional<Enrollment> findByUser_UserIdAndRound_RoundId(Long userId, Long roundId);
 
-    boolean existsByUser_IdAndCourse_CourseId(Long userId, Long courseId);
+    boolean existsByUser_UserIdAndRound_RoundId(Long userId, Long roundId);
 
-    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.course")
+    @Query("SELECT e FROM Enrollment e JOIN FETCH e.user JOIN FETCH e.round r JOIN FETCH r.course")
     List<Enrollment> findAllWithUserAndCourse();
 }
