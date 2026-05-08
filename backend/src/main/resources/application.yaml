@@ -23,3 +23,9 @@ jwt:
 ai:
   server:
     url: ${AI_SERVER_URL:http://localhost:5000}
+
+certificate:
+  storage-path: ${CERTIFICATE_STORAGE_PATH:/app/certificates}
+  n8n-webhook-url: ${BACKEND_N8N_TRIGGER_URL:${N8N_WEBHOOK_URL:}}
+  trigger-enabled: ${CERTIFICATE_TRIGGER_ENABLED:true}
+  issuer-name: ${CERTIFICATE_ISSUER_NAME:인사하는 인사팀}
