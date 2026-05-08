@@ -70,7 +70,7 @@ pipeline {
 
         stage('Docker Deploy') {
             steps {
-                sh 'docker compose --env-file .env up -d --build --force-recreate ai backend frontend'
+                sh 'docker compose --env-file .env up -d --build --force-recreate ai backend frontend dozzle'
             }
         }
 
