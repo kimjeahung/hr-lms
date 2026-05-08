@@ -35,7 +35,7 @@ public class Certificate {
     private LocalDateTime issuedAt;
 
     @Column(name = "file_url", length = 500)
-    private String fileUrl;   // 이수증 PDF 경로
+    private String fileUrl;   // 이수증 PDF 경로 -> 로컬로 저장
 
     @PrePersist
     protected void onCreate() {
