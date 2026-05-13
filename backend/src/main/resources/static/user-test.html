@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LMS User API 테스트 콘솔</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f3f5f8; color: #1f2937; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #dde3ea; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  h1 { margin: 0 0 12px 0; font-size: 22px; }
+  h2 { margin: 0 0 12px 0; font-size: 17px; }
+  h3 { margin: 0 0 8px 0; font-size: 14px; color: #334155; }
+  .muted { color: #64748b; font-size: 12px; }
+  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+  label { display: block; font-size: 12px; margin-bottom: 4px; color: #475569; }
+  input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #cdd5df; border-radius: 6px; }
+  textarea { min-height: 72px; resize: vertical; }
+  button { background: #1d4ed8; color: #fff; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+  button:hover { background: #1e40af; }
+  button.gray { background: #475569; }
+  button.gray:hover { background: #334155; }
+  .tabs { display: flex; gap: 8px; margin: 14px 0; }
+  .tab { padding: 8px 12px; border-radius: 7px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+  .tab.active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; font-weight: 600; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .result { margin-top: 8px; background: #0b1220; color: #c7f9cc; padding: 12px; border-radius: 8px; white-space: pre-wrap; overflow: auto; max-height: 360px; font-size: 12px; }
+  .result.error { color: #fecaca; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LMS User API 테스트 콘솔</h1>
+  <div class="muted">course/enrollment API를 브라우저에서 바로 테스트합니다. 기본 URL은 현재 접속 주소입니다.</div>
+
+  <div class="card">
+    <h2>1) 로그인/JWT</h2>
+    <div class="grid">
+      <div>
+        <label>BASE URL</label>
+        <input id="base-url" value="">
+      </div>
+      <div>
+        <label>사번</label>
+        <input id="employee-no" value="ADMIN001">
+      </div>
+      <div>
+        <label>비밀번호</label>
+        <input id="password" type="password" value="admin1234">
+      </div>
+    </div>
+    <div class="row" style="margin-top: 10px;">
+      <button onclick="login()">로그인</button>
+      <button class="gray" onclick="logout()">로그아웃</button>
+      <div id="login-state" class="muted"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="panel-user">사용자 수강 API</button>
+    <button class="tab" data-panel="panel-admin">관리자 Course/Enrollment API</button>
+    <button class="tab" data-panel="panel-cert">이수증 API</button>
+  </div>
+
+  <div id="panel-user" class="panel active">
+    <div class="card">
+      <h2>2) 사용자 수강 API (/api/user/enrollments)</h2>
+      <div class="grid">
+        <div><label>userId</label><input id="u-userId" value="1"></div>
+        <div><label>roundId</label><input id="u-roundId" value="1"></div>
+        <div><label>enrollmentId</label><input id="u-enrollmentId" value="1"></div>
+        <div><label>progress</label><input id="u-progress" value="50"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="applyEnrollment()">신청 POST</button>
+        <button onclick="historyByUser()">history GET</button>
+        <button onclick="allByUser()">all GET</button>
+        <button onclick="ongoingByUser()">ongoing GET</button>
+        <button onclick="getEnrollmentDetail()">상세 GET</button>
+        <button onclick="updateProgress()">진행률 PUT</button>
+        <button onclick="completeEnrollment()">완료 PUT</button>
+        <button onclick="scheduleDetail()">일정상세 GET</button>
+      </div>
+      <div id="res-user" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+
+  <div id="panel-admin" class="panel">
+    <div class="card">
+      <h2>3) 관리자 Course/Enrollment API</h2>
+      <div class="grid">
+        <div><label>courseId</label><input id="a-courseId" value="1"></div>
+        <div><label>roundId</label><input id="a-roundId" value="1"></div>
+        <div><label>userId</label><input id="a-userId" value="1"></div>
+        <div><label>enrollmentId</label><input id="a-enrollmentId" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="call('GET','/api/admin/courses',null,'res-admin')">강좌목록 GET</button>
+        <button onclick="adminEnroll()">수강등록 POST</button>
+        <button onclick="adminByUser()">직원별수강 GET</button>
+        <button onclick="adminByCourse()">강좌별수강 GET</button>
+        <button onclick="adminAllEnroll()">전체수강 GET</button>
+      </div>
+      <div id="res-admin" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+
+  <div id="panel-cert" class="panel">
+    <div class="card">
+      <h2>4) 이수증 API (/api/certificate)</h2>
+      <div class="grid">
+        <div><label>userId</label><input id="c-userId" value="1"></div>
+        <div><label>courseId</label><input id="c-courseId" value="1"></div>
+        <div><label>certificateId</label><input id="c-certId" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="generateCertificate()">generate POST</button>
+        <button onclick="downloadCertificate()">download GET</button>
+      </div>
+      <div id="res-cert" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let TOKEN = localStorage.getItem("userTestToken") || "";
+
+  function $(id) { return document.getElementById(id); }
+
+  function base() {
+    const value = $("base-url").value.trim();
+    return value || window.location.origin;
+  }
+
+  function setLoginState(text) {
+    $("login-state").textContent = text;
+  }
+
+  async function call(method, path, body, resultId, extraHeaders) {
+    const el = $(resultId);
+    el.className = "result";
+    el.textContent = "요청 중...";
+
+    try {
+      const headers = Object.assign({ "Content-Type": "application/json" }, extraHeaders || {});
+      if (TOKEN) headers.Authorization = "Bearer " + TOKEN;
+      const options = { method: method, headers: headers };
+      if (body) options.body = JSON.stringify(body);
+
+      const res = await fetch(base() + path, options);
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        el.textContent = "[" + res.status + " " + res.statusText + "] PDF 열기 성공";
+        return;
+      }
+
+      const text = await res.text();
+      let pretty = text;
+      try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch (_) {}
+      el.textContent = "[" + res.status + " " + res.statusText + "]\n\n" + pretty;
+      if (!res.ok) el.className = "result error";
+    } catch (e) {
+      el.className = "result error";
+      el.textContent = "에러: " + e.message;
+    }
+  }
+
+  async function login() {
+    try {
+      const res = await fetch(base() + "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeNo: $("employee-no").value.trim(),
+          password: $("password").value
+        })
+      });
+
+      if (!res.ok) throw new Error("로그인 실패: " + res.status);
+      const data = await res.json();
+      TOKEN = data.token || "";
+      localStorage.setItem("userTestToken", TOKEN);
+      setLoginState("로그인됨: " + (data.name || "") + " / " + (data.role || ""));
+    } catch (e) {
+      setLoginState("로그인 실패: " + e.message);
+    }
+  }
+
+  function logout() {
+    TOKEN = "";
+    localStorage.removeItem("userTestToken");
+    setLoginState("로그아웃됨");
+  }
+
+  function applyEnrollment() {
+    call("POST", "/api/user/enrollments?userId=" + $("u-userId").value + "&roundId=" + $("u-roundId").value, null, "res-user");
+  }
+  function historyByUser() {
+    call("GET", "/api/user/enrollments/history/" + $("u-userId").value, null, "res-user");
+  }
+  function allByUser() {
+    call("GET", "/api/user/enrollments/all/" + $("u-userId").value, null, "res-user");
+  }
+  function ongoingByUser() {
+    call("GET", "/api/user/enrollments/ongoing/" + $("u-userId").value, null, "res-user");
+  }
+  function getEnrollmentDetail() {
+    call("GET", "/api/user/enrollments/" + $("u-enrollmentId").value, null, "res-user");
+  }
+  function updateProgress() {
+    call("PUT", "/api/user/enrollments/" + $("u-enrollmentId").value + "/progress?progress=" + $("u-progress").value, null, "res-user");
+  }
+  function completeEnrollment() {
+    call("PUT", "/api/user/enrollments/" + $("u-enrollmentId").value + "/complete", null, "res-user");
+  }
+  function scheduleDetail() {
+    call("GET", "/api/user/enrollments/" + $("u-enrollmentId").value + "/schedule/detail", null, "res-user");
+  }
+
+  function adminEnroll() {
+    call("POST", "/api/admin/enrollments?userId=" + $("a-userId").value + "&roundId=" + $("a-roundId").value, null, "res-admin");
+  }
+  function adminByUser() {
+    call("GET", "/api/admin/enrollments/user/" + $("a-userId").value, null, "res-admin");
+  }
+  function adminByCourse() {
+    call("GET", "/api/admin/enrollments/course/" + $("a-courseId").value, null, "res-admin");
+  }
+  function adminAllEnroll() {
+    call("GET", "/api/admin/enrollments", null, "res-admin");
+  }
+
+  function generateCertificate() {
+    call("POST", "/api/certificate/generate", {
+      userId: Number($("c-userId").value),
+      courseId: Number($("c-courseId").value)
+    }, "res-cert");
+  }
+  function downloadCertificate() {
+    call("GET", "/api/certificate/download/" + $("c-certId").value, null, "res-cert");
+  }
+
+  document.querySelectorAll(".tab").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function(p) { p.classList.remove("active"); });
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.panel).classList.add("active");
+    });
+  });
+
+  $("base-url").value = window.location.origin;
+  if (TOKEN) setLoginState("저장된 토큰 사용 중");
+</script>
+</body>
+</html>
