@@ -29,6 +29,9 @@
   .panel.active { display: block; }
   .result { margin-top: 8px; background: #0b1220; color: #c7f9cc; padding: 12px; border-radius: 8px; white-space: pre-wrap; overflow: auto; max-height: 360px; font-size: 12px; }
   .result.error { color: #fecaca; }
+  .api-help { margin-top: 8px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; }
+  .api-help-title { font-size: 12px; color: #334155; font-weight: 600; margin-bottom: 6px; }
+  .api-help-list { margin: 0; padding-left: 18px; color: #475569; font-size: 12px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -68,11 +71,22 @@
   <div id="panel-user" class="panel active">
     <div class="card">
       <h2>2) 사용자 수강 API (/api/user/enrollments)</h2>
+      <div class="api-help">
+        <div class="api-help-title">버튼별 필수 파라미터</div>
+        <ul class="api-help-list">
+          <li>신청 POST: userId, roundId</li>
+          <li>history/all/ongoing GET: userId</li>
+          <li>상세/완료/일정상세 GET: enrollmentId</li>
+          <li>진행률 PUT: enrollmentId, progress(0~100)</li>
+        </ul>
+      </div>
       <div class="grid">
         <div><label>userId</label><input id="u-userId" value="1"></div>
         <div><label>roundId</label><input id="u-roundId" value="1"></div>
         <div><label>enrollmentId</label><input id="u-enrollmentId" value="1"></div>
         <div><label>progress</label><input id="u-progress" value="50"></div>
+        <div><label>feedback</label><input id="u-feedback" value="좋은 교육이었습니다."></div>
+        <div><label>notification enabled</label><input id="u-enabled" value="true"></div>
       </div>
       <div class="row" style="margin-top: 10px;">
         <button onclick="applyEnrollment()">신청 POST</button>
@@ -82,7 +96,10 @@
         <button onclick="getEnrollmentDetail()">상세 GET</button>
         <button onclick="updateProgress()">진행률 PUT</button>
         <button onclick="completeEnrollment()">완료 PUT</button>
+        <button onclick="scheduleBasic()">일정 GET</button>
         <button onclick="scheduleDetail()">일정상세 GET</button>
+        <button onclick="submitFeedback()">피드백 POST</button>
+        <button onclick="setNotifications()">알림설정 POST</button>
       </div>
       <div id="res-user" class="result">결과가 여기 표시됩니다.</div>
     </div>
@@ -91,18 +108,45 @@
   <div id="panel-admin" class="panel">
     <div class="card">
       <h2>3) 관리자 Course/Enrollment API</h2>
+      <div class="api-help">
+        <div class="api-help-title">버튼별 필수 파라미터</div>
+        <ul class="api-help-list">
+          <li>수강 등록 POST: userId, roundId</li>
+          <li>수강 진행률 PATCH: enrollmentId, progress</li>
+          <li>수강 상태 PUT: enrollmentId, status(NOT_STARTED/IN_PROGRESS/DONE)</li>
+          <li>수강 일정 PUT: roundId, endDate(yyyy-MM-dd)</li>
+          <li>강좌 생성/수정: title, description, category, targetRole, durationMin, thumbnailUrl</li>
+        </ul>
+      </div>
       <div class="grid">
         <div><label>courseId</label><input id="a-courseId" value="1"></div>
         <div><label>roundId</label><input id="a-roundId" value="1"></div>
         <div><label>userId</label><input id="a-userId" value="1"></div>
         <div><label>enrollmentId</label><input id="a-enrollmentId" value="1"></div>
+        <div><label>progress</label><input id="a-progress" value="60"></div>
+        <div><label>status</label><input id="a-status" value="IN_PROGRESS"></div>
+        <div><label>endDate(yyyy-MM-dd)</label><input id="a-endDate" value="2026-12-31"></div>
+        <div><label>title</label><input id="a-title" value="신규 강좌"></div>
+        <div><label>description</label><input id="a-description" value="강좌 설명"></div>
+        <div><label>category</label><input id="a-category" value="공통"></div>
+        <div><label>targetRole(int)</label><input id="a-targetRole" value="1"></div>
+        <div><label>durationMin</label><input id="a-durationMin" value="120"></div>
+        <div><label>thumbnailUrl</label><input id="a-thumbnailUrl" value="https://example.com/thumb.png"></div>
       </div>
       <div class="row" style="margin-top: 10px;">
         <button onclick="call('GET','/api/admin/courses',null,'res-admin')">강좌목록 GET</button>
+        <button onclick="adminCourseOne()">강좌단건 GET</button>
+        <button onclick="adminCourseCreate()">강좌생성 POST</button>
+        <button onclick="adminCourseUpdate()">강좌수정 PUT</button>
+        <button onclick="adminCourseDelete()">강좌삭제 DELETE</button>
         <button onclick="adminEnroll()">수강등록 POST</button>
         <button onclick="adminByUser()">직원별수강 GET</button>
         <button onclick="adminByCourse()">강좌별수강 GET</button>
         <button onclick="adminAllEnroll()">전체수강 GET</button>
+        <button onclick="adminUpdateProgress()">수강진행률 PATCH</button>
+        <button onclick="adminChangeStatus()">수강상태 PUT</button>
+        <button onclick="adminManageSchedule()">수강일정 PUT</button>
+        <button onclick="adminStatistics()">통계 GET</button>
       </div>
       <div id="res-admin" class="result">결과가 여기 표시됩니다.</div>
     </div>
@@ -137,6 +181,21 @@
 
   function setLoginState(text) {
     $("login-state").textContent = text;
+  }
+
+  function readRequired(resultId, ids) {
+    const values = {};
+    for (const id of ids) {
+      const v = ($(id).value || "").trim();
+      if (!v) {
+        const el = $(resultId);
+        el.className = "result error";
+        el.textContent = `필수값 누락: ${id}`;
+        return null;
+      }
+      values[id] = v;
+    }
+    return values;
   }
 
 
@@ -218,41 +277,130 @@
   }
 
   function applyEnrollment() {
-    call("POST", "/api/user/enrollments?userId=" + $("u-userId").value + "&roundId=" + $("u-roundId").value, null, "res-user");
+    const v = readRequired("res-user", ["u-userId", "u-roundId"]);
+    if (!v) return;
+    call("POST", "/api/user/enrollments?userId=" + v["u-userId"] + "&roundId=" + v["u-roundId"], null, "res-user");
   }
   function historyByUser() {
-    call("GET", "/api/user/enrollments/history/" + $("u-userId").value, null, "res-user");
+    const v = readRequired("res-user", ["u-userId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/history/" + v["u-userId"], null, "res-user");
   }
   function allByUser() {
-    call("GET", "/api/user/enrollments/all/" + $("u-userId").value, null, "res-user");
+    const v = readRequired("res-user", ["u-userId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/all/" + v["u-userId"], null, "res-user");
   }
   function ongoingByUser() {
-    call("GET", "/api/user/enrollments/ongoing/" + $("u-userId").value, null, "res-user");
+    const v = readRequired("res-user", ["u-userId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/ongoing/" + v["u-userId"], null, "res-user");
   }
   function getEnrollmentDetail() {
-    call("GET", "/api/user/enrollments/" + $("u-enrollmentId").value, null, "res-user");
+    const v = readRequired("res-user", ["u-enrollmentId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"], null, "res-user");
   }
   function updateProgress() {
-    call("PUT", "/api/user/enrollments/" + $("u-enrollmentId").value + "/progress?progress=" + $("u-progress").value, null, "res-user");
+    const v = readRequired("res-user", ["u-enrollmentId", "u-progress"]);
+    if (!v) return;
+    call("PUT", "/api/user/enrollments/" + v["u-enrollmentId"] + "/progress?progress=" + v["u-progress"], null, "res-user");
   }
   function completeEnrollment() {
-    call("PUT", "/api/user/enrollments/" + $("u-enrollmentId").value + "/complete", null, "res-user");
+    const v = readRequired("res-user", ["u-enrollmentId"]);
+    if (!v) return;
+    call("PUT", "/api/user/enrollments/" + v["u-enrollmentId"] + "/complete", null, "res-user");
+  }
+  function scheduleBasic() {
+    const v = readRequired("res-user", ["u-enrollmentId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"] + "/schedule", null, "res-user");
   }
   function scheduleDetail() {
-    call("GET", "/api/user/enrollments/" + $("u-enrollmentId").value + "/schedule/detail", null, "res-user");
+    const v = readRequired("res-user", ["u-enrollmentId"]);
+    if (!v) return;
+    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"] + "/schedule/detail", null, "res-user");
+  }
+  function submitFeedback() {
+    const v = readRequired("res-user", ["u-enrollmentId", "u-feedback"]);
+    if (!v) return;
+    call("POST", "/api/user/enrollments/" + v["u-enrollmentId"] + "/feedback?feedback=" + encodeURIComponent(v["u-feedback"]), null, "res-user");
+  }
+  function setNotifications() {
+    const v = readRequired("res-user", ["u-enrollmentId", "u-enabled"]);
+    if (!v) return;
+    call("POST", "/api/user/enrollments/" + v["u-enrollmentId"] + "/notifications?enabled=" + v["u-enabled"], null, "res-user");
   }
 
   function adminEnroll() {
-    call("POST", "/api/admin/enrollments?userId=" + $("a-userId").value + "&roundId=" + $("a-roundId").value, null, "res-admin");
+    const v = readRequired("res-admin", ["a-userId", "a-roundId"]);
+    if (!v) return;
+    call("POST", "/api/admin/enrollments?userId=" + v["a-userId"] + "&roundId=" + v["a-roundId"], null, "res-admin");
   }
   function adminByUser() {
-    call("GET", "/api/admin/enrollments/user/" + $("a-userId").value, null, "res-admin");
+    const v = readRequired("res-admin", ["a-userId"]);
+    if (!v) return;
+    call("GET", "/api/admin/enrollments/user/" + v["a-userId"], null, "res-admin");
   }
   function adminByCourse() {
-    call("GET", "/api/admin/enrollments/course/" + $("a-courseId").value, null, "res-admin");
+    const v = readRequired("res-admin", ["a-courseId"]);
+    if (!v) return;
+    call("GET", "/api/admin/enrollments/course/" + v["a-courseId"], null, "res-admin");
   }
   function adminAllEnroll() {
     call("GET", "/api/admin/enrollments", null, "res-admin");
+  }
+  function adminUpdateProgress() {
+    const v = readRequired("res-admin", ["a-enrollmentId", "a-progress"]);
+    if (!v) return;
+    call("PATCH", "/api/admin/enrollments/" + v["a-enrollmentId"] + "/progress?progress=" + v["a-progress"], null, "res-admin");
+  }
+  function adminChangeStatus() {
+    const v = readRequired("res-admin", ["a-enrollmentId", "a-status"]);
+    if (!v) return;
+    call("PUT", "/api/admin/enrollments/" + v["a-enrollmentId"] + "/status?status=" + encodeURIComponent(v["a-status"]), null, "res-admin");
+  }
+  function adminManageSchedule() {
+    const v = readRequired("res-admin", ["a-roundId", "a-endDate"]);
+    if (!v) return;
+    call("PUT", "/api/admin/enrollments/schedule/" + v["a-roundId"] + "?endDate=" + encodeURIComponent(v["a-endDate"]), null, "res-admin");
+  }
+  function adminStatistics() {
+    call("GET", "/api/admin/enrollments/statistics", null, "res-admin");
+  }
+  function adminCourseOne() {
+    const v = readRequired("res-admin", ["a-courseId"]);
+    if (!v) return;
+    call("GET", "/api/admin/courses/" + v["a-courseId"], null, "res-admin");
+  }
+  function adminCourseCreate() {
+    const v = readRequired("res-admin", ["a-title", "a-description", "a-category", "a-targetRole", "a-durationMin", "a-thumbnailUrl"]);
+    if (!v) return;
+    call("POST", "/api/admin/courses", {
+      title: v["a-title"],
+      description: v["a-description"],
+      category: v["a-category"],
+      targetRole: Number(v["a-targetRole"]),
+      durationMin: Number(v["a-durationMin"]),
+      thumbnailUrl: v["a-thumbnailUrl"]
+    }, "res-admin");
+  }
+  function adminCourseUpdate() {
+    const v = readRequired("res-admin", ["a-courseId", "a-title", "a-description", "a-category", "a-targetRole", "a-durationMin", "a-thumbnailUrl"]);
+    if (!v) return;
+    call("PUT", "/api/admin/courses/" + v["a-courseId"], {
+      title: v["a-title"],
+      description: v["a-description"],
+      category: v["a-category"],
+      targetRole: Number(v["a-targetRole"]),
+      durationMin: Number(v["a-durationMin"]),
+      thumbnailUrl: v["a-thumbnailUrl"]
+    }, "res-admin");
+  }
+  function adminCourseDelete() {
+    const v = readRequired("res-admin", ["a-courseId"]);
+    if (!v) return;
+    call("DELETE", "/api/admin/courses/" + v["a-courseId"], null, "res-admin");
   }
 
   function generateCertificate() {
