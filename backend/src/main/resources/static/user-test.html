@@ -139,6 +139,7 @@
     $("login-state").textContent = text;
   }
 
+
   async function call(method, path, body, resultId, extraHeaders) {
     const el = $(resultId);
     el.className = "result";
@@ -157,15 +158,32 @@
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank");
-        el.textContent = "[" + res.status + " " + res.statusText + "] PDF 열기 성공";
+        el.textContent = `[${res.status} ${res.statusText}] PDF 열기 성공`;
         return;
       }
 
       const text = await res.text();
-      let pretty = text;
-      try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch (_) {}
-      el.textContent = "[" + res.status + " " + res.statusText + "]\n\n" + pretty;
-      if (!res.ok) el.className = "result error";
+      let output = `[${res.status} ${res.statusText}]\n`;
+      let json = null;
+      try { json = JSON.parse(text); } catch {}
+
+      if (!res.ok) {
+        el.className = "result error";
+        if (json) {
+          // 주요 에러 필드만 추출
+          let msg = json.message || json.error || json.detail || "";
+          let stack = json.stack || "";
+          output += (msg ? `\n메시지: ${msg}` : "");
+          if (json.errors) output += `\nerrors: ${JSON.stringify(json.errors, null, 2)}`;
+          if (stack) output += `\nstack: ${stack}`;
+          output += `\n전체 응답: ` + JSON.stringify(json, null, 2);
+        } else {
+          output += `\n${text}`;
+        }
+      } else {
+        output += "\n" + (json ? JSON.stringify(json, null, 2) : text);
+      }
+      el.textContent = output;
     } catch (e) {
       el.className = "result error";
       el.textContent = "에러: " + e.message;
