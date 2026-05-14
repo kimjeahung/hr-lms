@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,8 +22,8 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class EnrollmentService {
 
-    private final EnrollmentRepository enrollmentRepository;
-    private final UserRepository       userRepository;
+    private final EnrollmentRepository  enrollmentRepository;
+    private final UserRepository        userRepository;
     private final CourseRoundRepository courseRoundRepository;
 
     /** 전체 이수 현황 조회 (관리자용) */
@@ -30,6 +31,35 @@ public class EnrollmentService {
         return enrollmentRepository.findAllWithUserAndCourse().stream()
                 .map(EnrollmentResponse::new)
                 .toList();
+    }
+
+    /**
+     * 필터 조건에 따른 이수 현황 조회
+     *
+     * @param filter   "incomplete" → 미이수자만, 그 외/null → 전체
+     * @param dept     부서명 필터
+     * @param category 카테고리 필터 (법정의무교육 / 직무교육)
+     * @param role     대상직군 필터 (1=현장직, 2=사무직)
+     */
+    public List<EnrollmentResponse> getFiltered(
+            String filter, String dept, String category, Integer role) {
+
+        List<Enrollment> result;
+
+        // 미이수자 필터가 최우선
+        if ("incomplete".equalsIgnoreCase(filter)) {
+            result = enrollmentRepository.findAllNotCompleted();
+        } else if (dept != null && !dept.isBlank()) {
+            result = enrollmentRepository.findAllByDepartment(dept);
+        } else if (category != null && !category.isBlank()) {
+            result = enrollmentRepository.findAllByCategory(category);
+        } else if (role != null) {
+            result = enrollmentRepository.findAllByTargetRole(role);
+        } else {
+            result = enrollmentRepository.findAllWithUserAndCourse();
+        }
+
+        return result.stream().map(EnrollmentResponse::new).toList();
     }
 
     /** 특정 직원 이수 현황 */
@@ -127,7 +157,8 @@ public class EnrollmentService {
             Enrollment.Status newStatus = Enrollment.Status.valueOf(status);
             enrollment.changeStatus(newStatus);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 상태값입니다. 유효한 값: " + java.util.Arrays.toString(Enrollment.Status.values()));
+            throw new IllegalArgumentException("유효하지 않은 상태값입니다. 유효한 값: "
+                    + Arrays.toString(Enrollment.Status.values()));
         }
         return new EnrollmentResponse(enrollment);
     }
@@ -144,10 +175,10 @@ public class EnrollmentService {
     public Map<String, Object> getEnrollmentStatistics() {
         List<Enrollment> all = enrollmentRepository.findAll();
         Map<String, Object> stats = new HashMap<>();
-        stats.put("total", (long) all.size());
+        stats.put("total",      (long) all.size());
         stats.put("notStarted", all.stream().filter(e -> e.getStatus() == Enrollment.Status.NOT_STARTED).count());
         stats.put("inProgress", all.stream().filter(e -> e.getStatus() == Enrollment.Status.IN_PROGRESS).count());
-        stats.put("completed", all.stream().filter(e -> e.getStatus() == Enrollment.Status.DONE).count());
+        stats.put("completed",  all.stream().filter(e -> e.getStatus() == Enrollment.Status.DONE).count());
         return stats;
     }
 
@@ -159,5 +190,4 @@ public class EnrollmentService {
         round.update(round.getStartDate(), endDate);
         return courseRoundRepository.save(round);
     }
-
 }
