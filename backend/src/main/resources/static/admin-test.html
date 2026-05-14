@@ -135,6 +135,7 @@
     <div class="tab" onclick="switchTab('course')">📚 강좌</div>
     <div class="tab" onclick="switchTab('round')">🗓 차수</div>
     <div class="tab" onclick="switchTab('enrollment')">📝 수강등록</div>
+    <div class="tab" onclick="switchTab('lecture')">📁 단원/영상</div>
     <div class="tab" onclick="switchTab('notice')">📢 공지사항</div>
     <div class="tab" onclick="switchTab('quiz')">❓ 퀴즈/시험</div>
   </div>
@@ -283,8 +284,38 @@
     <!-- 수강등록 -->
     <div class="panel" id="panel-enrollment">
       <div class="card">
-        <h3>전체 이수현황 GET /api/admin/enrollments</h3>
-        <button onclick="apiCall('GET','/api/admin/enrollments',null,'res-enroll-all')">조회</button>
+        <h3>전체 이수현황 GET /api/admin/enrollments (필터 지원)</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>필터</label>
+            <select id="en-filter" style="width:120px">
+              <option value="">전체</option>
+              <option value="incomplete">미완료만</option>
+              <option value="dept">부서별</option>
+              <option value="category">카테고리별</option>
+              <option value="role">대상직군별</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>부서명 (dept 시)</label>
+            <input id="en-dept" placeholder="예: 개발팀" style="width:130px">
+          </div>
+          <div class="form-group">
+            <label>카테고리 (category 시)</label>
+            <input id="en-category" placeholder="예: 법정의무교육" style="width:150px">
+          </div>
+          <div class="form-group">
+            <label>직군 (role 시)</label>
+            <select id="en-role" style="width:90px">
+              <option value="">선택</option>
+              <option value="0">전체</option>
+              <option value="1">현장직</option>
+              <option value="2">사무직</option>
+            </select>
+          </div>
+          <button onclick="getEnrollments()">조회</button>
+          <button onclick="exportEnrollments()" style="background:#2e7d32">📥 Excel 내보내기</button>
+        </div>
         <div id="res-enroll-all" class="result" style="margin-top:10px">결과가 여기에 표시됩니다</div>
       </div>
       <div class="card">
@@ -308,6 +339,101 @@
           <button onclick="updateProgress()">진행률 업데이트</button>
         </div>
         <div id="res-enroll-user" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+    </div>
+
+    <!-- 단원/영상 -->
+    <div class="panel" id="panel-lecture">
+      <!-- 단원 CRUD -->
+      <div class="card">
+        <h3>단원 목록 GET /api/admin/courses/{courseId}/lectures</h3>
+        <div class="form-row">
+          <div class="form-group"><label>강좌 ID</label><input id="lec-cid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getLectures()">조회</button>
+        </div>
+        <div id="res-lec-list" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>단원 등록 POST /api/admin/courses/{courseId}/lectures</h3>
+        <div class="form-row">
+          <div class="form-group"><label>강좌 ID</label><input id="lec-cid2" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>단원명</label><input id="lec-title" placeholder="1강 소개" style="width:180px"></div>
+          <div class="form-group"><label>설명</label><input id="lec-desc" placeholder="단원 설명" style="width:200px"></div>
+          <div class="form-group"><label>순서</label><input id="lec-order" type="number" placeholder="1" style="width:70px"></div>
+          <button onclick="createLecture()">등록</button>
+        </div>
+        <div id="res-lec-create" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>단원 수정/삭제</h3>
+        <div class="form-row">
+          <div class="form-group"><label>강좌 ID</label><input id="lec-cid3" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>단원 ID</label><input id="lec-lid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getLecture()">단건조회</button>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div class="form-group"><label>단원명</label><input id="lec-title2" placeholder="수정할 제목" style="width:180px"></div>
+          <div class="form-group"><label>설명</label><input id="lec-desc2" placeholder="수정할 설명" style="width:200px"></div>
+          <div class="form-group"><label>순서</label><input id="lec-order2" type="number" placeholder="1" style="width:70px"></div>
+          <button onclick="updateLecture()">수정</button>
+          <button class="danger" onclick="deleteLecture()">삭제</button>
+        </div>
+        <div id="res-lec-one" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+
+      <!-- 영상 CRUD -->
+      <div class="card">
+        <h3>영상 목록 GET /api/admin/lectures/{lectureId}/videos</h3>
+        <div class="form-row">
+          <div class="form-group"><label>단원 ID</label><input id="vid-lid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getVideos()">조회</button>
+        </div>
+        <div id="res-vid-list" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>영상 파일 업로드 POST /api/admin/lectures/{lectureId}/videos/upload (multipart)</h3>
+        <div class="form-row">
+          <div class="form-group"><label>단원 ID</label><input id="vid-lid2" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>영상 제목</label><input id="vid-title" placeholder="제목 (생략 시 파일명)" style="width:180px"></div>
+          <div class="form-group"><label>정렬순서</label><input id="vid-order" type="number" placeholder="0" style="width:70px"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>영상 파일 (mp4, webm, ogg, mov)</label>
+            <input type="file" id="vid-file" accept="video/mp4,video/webm,video/ogg,video/quicktime,.mov" style="width:300px">
+          </div>
+          <button onclick="uploadVideo()">업로드</button>
+        </div>
+        <div id="res-vid-upload" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>영상 URL 직접 등록 POST /api/admin/lectures/{lectureId}/videos</h3>
+        <div class="form-row">
+          <div class="form-group"><label>단원 ID</label><input id="vid-lid3" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>영상 제목</label><input id="vid-title2" placeholder="영상 제목" style="width:160px"></div>
+          <div class="form-group"><label>영상 URL</label><input id="vid-url" placeholder="https://..." style="width:220px"></div>
+          <div class="form-group"><label>재생시간(초)</label><input id="vid-dur" type="number" placeholder="300" style="width:90px"></div>
+          <div class="form-group"><label>정렬순서</label><input id="vid-order2" type="number" placeholder="0" style="width:70px"></div>
+          <button onclick="createVideo()">등록</button>
+        </div>
+        <div id="res-vid-create" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>영상 수정/삭제</h3>
+        <div class="form-row">
+          <div class="form-group"><label>단원 ID</label><input id="vid-lid4" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>영상 ID</label><input id="vid-vid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getVideo()">단건조회</button>
+          <button class="danger" onclick="deleteVideo()">삭제</button>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div class="form-group"><label>영상 제목</label><input id="vid-title3" placeholder="수정할 제목" style="width:160px"></div>
+          <div class="form-group"><label>영상 URL</label><input id="vid-url2" placeholder="수정할 URL" style="width:220px"></div>
+          <div class="form-group"><label>재생시간(초)</label><input id="vid-dur2" type="number" placeholder="300" style="width:90px"></div>
+          <div class="form-group"><label>정렬순서</label><input id="vid-order3" type="number" placeholder="0" style="width:70px"></div>
+          <button onclick="updateVideo()">수정</button>
+        </div>
+        <div id="res-vid-one" class="result">결과가 여기에 표시됩니다</div>
       </div>
     </div>
 
@@ -506,6 +632,39 @@ function deleteRound() {
 }
 
 // 수강등록
+function getEnrollments() {
+  const filter = document.getElementById('en-filter').value;
+  const dept   = document.getElementById('en-dept').value;
+  const cat    = document.getElementById('en-category').value;
+  const role   = document.getElementById('en-role').value;
+  let qs = [];
+  if (filter)              qs.push('filter=' + encodeURIComponent(filter));
+  if (dept && filter==='dept')     qs.push('dept=' + encodeURIComponent(dept));
+  if (cat  && filter==='category') qs.push('category=' + encodeURIComponent(cat));
+  if (role !== '' && filter==='role') qs.push('role=' + role);
+  const url = '/api/admin/enrollments' + (qs.length ? '?' + qs.join('&') : '');
+  apiCall('GET', url, null, 'res-enroll-all');
+}
+async function exportEnrollments() {
+  const el = document.getElementById('res-enroll-all');
+  el.textContent = 'Excel 다운로드 중...';
+  try {
+    const res = await fetch(BASE + '/api/admin/enrollments/export', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    if (!res.ok) { el.className = 'result error'; el.textContent = 'Export 실패: ' + res.status; return; }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'enrollments.xlsx';
+    a.click();
+    el.className = 'result';
+    el.textContent = '✅ Excel 다운로드 완료';
+  } catch(e) {
+    el.className = 'result error';
+    el.textContent = '에러: ' + e.message;
+  }
+}
 function enroll() {
   const uid = document.getElementById('en-uid').value;
   const rid = document.getElementById('en-rid').value;
@@ -518,6 +677,100 @@ function updateProgress() {
   const eid = document.getElementById('en-eid').value;
   const prog = document.getElementById('en-progress').value;
   apiCall('PATCH', '/api/admin/enrollments/' + eid + '/progress?progress=' + prog, null, 'res-enroll-user');
+}
+
+// 단원(Lecture)
+function getLectures() {
+  apiCall('GET', '/api/admin/courses/' + document.getElementById('lec-cid').value + '/lectures', null, 'res-lec-list');
+}
+function getLecture() {
+  const cid = document.getElementById('lec-cid3').value;
+  const lid = document.getElementById('lec-lid').value;
+  apiCall('GET', '/api/admin/courses/' + cid + '/lectures/' + lid, null, 'res-lec-one');
+}
+function createLecture() {
+  const cid = document.getElementById('lec-cid2').value;
+  apiCall('POST', '/api/admin/courses/' + cid + '/lectures', {
+    title:     document.getElementById('lec-title').value,
+    description: document.getElementById('lec-desc').value,
+    sortOrder: parseInt(document.getElementById('lec-order').value) || 0
+  }, 'res-lec-create');
+}
+function updateLecture() {
+  const cid = document.getElementById('lec-cid3').value;
+  const lid = document.getElementById('lec-lid').value;
+  apiCall('PUT', '/api/admin/courses/' + cid + '/lectures/' + lid, {
+    title:     document.getElementById('lec-title2').value,
+    description: document.getElementById('lec-desc2').value,
+    sortOrder: parseInt(document.getElementById('lec-order2').value) || 0
+  }, 'res-lec-one');
+}
+function deleteLecture() {
+  const cid = document.getElementById('lec-cid3').value;
+  const lid = document.getElementById('lec-lid').value;
+  apiCall('DELETE', '/api/admin/courses/' + cid + '/lectures/' + lid, null, 'res-lec-one');
+}
+
+// 영상(CourseVideo)
+function getVideos() {
+  apiCall('GET', '/api/admin/lectures/' + document.getElementById('vid-lid').value + '/videos', null, 'res-vid-list');
+}
+function getVideo() {
+  const lid = document.getElementById('vid-lid4').value;
+  const vid = document.getElementById('vid-vid').value;
+  apiCall('GET', '/api/admin/lectures/' + lid + '/videos/' + vid, null, 'res-vid-one');
+}
+function createVideo() {
+  const lid = document.getElementById('vid-lid3').value;
+  apiCall('POST', '/api/admin/lectures/' + lid + '/videos', {
+    title:       document.getElementById('vid-title2').value,
+    videoUrl:    document.getElementById('vid-url').value,
+    durationSec: parseInt(document.getElementById('vid-dur').value) || 0,
+    sortOrder:   parseInt(document.getElementById('vid-order2').value) || 0
+  }, 'res-vid-create');
+}
+function updateVideo() {
+  const lid = document.getElementById('vid-lid4').value;
+  const vid = document.getElementById('vid-vid').value;
+  apiCall('PUT', '/api/admin/lectures/' + lid + '/videos/' + vid, {
+    title:       document.getElementById('vid-title3').value,
+    videoUrl:    document.getElementById('vid-url2').value,
+    durationSec: parseInt(document.getElementById('vid-dur2').value) || 0,
+    sortOrder:   parseInt(document.getElementById('vid-order3').value) || 0
+  }, 'res-vid-one');
+}
+function deleteVideo() {
+  const lid = document.getElementById('vid-lid4').value;
+  const vid = document.getElementById('vid-vid').value;
+  apiCall('DELETE', '/api/admin/lectures/' + lid + '/videos/' + vid, null, 'res-vid-one');
+}
+async function uploadVideo() {
+  const lid  = document.getElementById('vid-lid2').value;
+  const file = document.getElementById('vid-file').files[0];
+  const el   = document.getElementById('res-vid-upload');
+  if (!file) { el.className = 'result error'; el.textContent = '파일을 선택해주세요.'; return; }
+  el.className = 'result';
+  el.textContent = '업로드 중... (파일 크기에 따라 시간이 걸릴 수 있습니다)';
+  const form = new FormData();
+  form.append('file', file);
+  const title = document.getElementById('vid-title').value;
+  if (title) form.append('title', title);
+  form.append('sortOrder', document.getElementById('vid-order').value || '0');
+  try {
+    const res = await fetch(BASE + '/api/admin/lectures/' + lid + '/videos/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: form
+    });
+    const text = await res.text();
+    let pretty;
+    try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch { pretty = text; }
+    el.textContent = `[${res.status} ${res.statusText}]\n\n${pretty}`;
+    if (!res.ok) el.className = 'result error';
+  } catch(e) {
+    el.className = 'result error';
+    el.textContent = '에러: ' + e.message;
+  }
 }
 
 // 공지
