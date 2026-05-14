@@ -37,8 +37,11 @@ services:
       CERTIFICATE_STORAGE_PATH: ${CERTIFICATE_STORAGE_PATH:-/app/certificates}
       BACKEND_N8N_TRIGGER_URL: ${BACKEND_N8N_TRIGGER_URL:-http://n8n:5678/webhook/certificate}
       CERTIFICATE_ISSUER_NAME: ${CERTIFICATE_ISSUER_NAME:-인사하는 인사팀}
+      VIDEO_STORAGE_PATH: ${VIDEO_STORAGE_PATH:-/app/videos}
+      VIDEO_BASE_URL: ${VIDEO_BASE_URL:-/api/user/videos}
     volumes:
       - certificate-storage:/app/certificates
+      - video-storage:/app/videos
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health >/dev/null || exit 1"]
@@ -95,3 +98,4 @@ services:
 volumes:
   n8n_data:
   certificate-storage:
+  video-storage:
