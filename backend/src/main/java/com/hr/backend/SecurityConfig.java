@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers("/health", "/admin-test.html", "/", "/*.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // CORS preflight
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/user/courses").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/auth/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

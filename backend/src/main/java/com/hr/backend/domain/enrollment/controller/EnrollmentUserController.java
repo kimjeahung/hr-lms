@@ -1,14 +1,15 @@
 package com.hr.backend.domain.enrollment.controller;
 
 import com.hr.backend.admin.dto.EnrollmentResponse;
+import com.hr.backend.domain.enrollment.dto.EnrollmentCalendarResponse;
 import com.hr.backend.domain.enrollment.dto.EnrollmentScheduleResponse;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
+import com.hr.backend.domain.enrollment.service.EnrollmentCalendarService;
 import com.hr.backend.domain.enrollment.service.EnrollmentService;
 import com.hr.backend.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import java.util.List;
 public class EnrollmentUserController {
 
     private final EnrollmentService enrollmentService;
+    private final EnrollmentCalendarService enrollmentCalendarService;
     private final EntityManager     entityManager;
     private final UserRepository    userRepository;
 
@@ -37,24 +39,46 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(enrollmentService.applyEnrollment(userId, roundId));
     }
 
-    // 본인 수강 이력 조회
+    // 본인 수강 이력 조회 (JWT 기준)
+    @GetMapping("/history")
+    public ResponseEntity<List<EnrollmentResponse>> enrollmentHistory() {
+        return ResponseEntity.ok(enrollmentService.getHistoryByUser(getLoginUserId()));
+    }
+
+    // 본인 전체 수강 내역 조회 (JWT 기준)
+    @GetMapping("/all")
+    public ResponseEntity<List<EnrollmentResponse>> getALLEnrollmentsByUser() {
+        return ResponseEntity.ok(enrollmentService.getByUser(getLoginUserId()));
+    }
+
+    // 본인 수강중인 교육 조회 (JWT 기준)
+    @GetMapping("/ongoing")
+    public ResponseEntity<List<EnrollmentResponse>> getOngoingEnrollments() {
+        return ResponseEntity.ok(enrollmentService.getOngoingEnrollments(getLoginUserId()));
+    }
+
+    // 하위호환용 경로 (기존 클라이언트 유지)
     @GetMapping("/history/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> enrollmentHistory(@PathVariable Long userId) {
-        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    public ResponseEntity<List<EnrollmentResponse>> enrollmentHistoryLegacy(@PathVariable Long userId) {
+        if (!getLoginUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인 수강 이력만 조회할 수 있습니다.");
+        }
         return ResponseEntity.ok(enrollmentService.getHistoryByUser(userId));
     }
 
-    // 본인 전체 수강 내역 조회
     @GetMapping("/all/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> getALLEnrollmentsByUser(@PathVariable Long userId) {
-        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    public ResponseEntity<List<EnrollmentResponse>> getALLEnrollmentsByUserLegacy(@PathVariable Long userId) {
+        if (!getLoginUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인 전체 수강 내역만 조회할 수 있습니다.");
+        }
         return ResponseEntity.ok(enrollmentService.getByUser(userId));
     }
 
-    // 본인 수강중인 교육 조회
     @GetMapping("/ongoing/{userId}")
-    public ResponseEntity<List<EnrollmentResponse>> getOngoingEnrollments(@PathVariable Long userId) {
-        if (!getLoginUserId().equals(userId)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    public ResponseEntity<List<EnrollmentResponse>> getOngoingEnrollmentsLegacy(@PathVariable Long userId) {
+        if (!getLoginUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인 수강중인 교육만 조회할 수 있습니다.");
+        }
         return ResponseEntity.ok(enrollmentService.getOngoingEnrollments(userId));
     }
 
@@ -78,26 +102,10 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(enrollmentService.completeEnrollment(enrollmentId));
     }
 
-    // 수강 피드백 제출 (stub — 추후 구현)
-    @PostMapping("/{enrollmentId}/feedback")
-    public ResponseEntity<String> submitEnrollmentFeedback(
-            @PathVariable Long enrollmentId,
-            @RequestParam String feedback) {
-        return ResponseEntity.ok("피드백이 제출되었습니다.");
-    }
-
-    // 수강 알림 설정 (stub — 추후 구현)
-    @PostMapping("/{enrollmentId}/notifications")
-    public ResponseEntity<String> setEnrollmentNotifications(
-            @PathVariable Long enrollmentId,
-            @RequestParam boolean enabled) {
-        return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
-    }
-
-    // 수강 캘린더 (기본)
-    @GetMapping("/{enrollmentId}/schedule")
-    public ResponseEntity<String> getEnrollmentSchedule(@PathVariable Long enrollmentId) {
-        return ResponseEntity.ok("수강 일정 정보입니다.");
+    // 수강 캘린더 (전체)
+    @GetMapping("/schedule")
+    public ResponseEntity<List<EnrollmentCalendarResponse>> getEnrollmentSchedule() {
+        return ResponseEntity.ok(enrollmentCalendarService.getUserEnrollmentCalendar(getLoginUserId()));
     }
 
     // 수강 캘린더 상세

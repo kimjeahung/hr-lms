@@ -7,47 +7,47 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f3f5f8; color: #1f2937; }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
   .card { background: #fff; border: 1px solid #dde3ea; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
-  h1 { margin: 0 0 12px 0; font-size: 22px; }
-  h2 { margin: 0 0 12px 0; font-size: 17px; }
-  h3 { margin: 0 0 8px 0; font-size: 14px; color: #334155; }
+  h1 { margin: 0 0 12px 0; font-size: 24px; font-weight: 700; }
+  h2 { margin: 0 0 12px 0; font-size: 17px; color: #1e3a8a; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h3 { margin: 0 0 8px 0; font-size: 13px; color: #334155; font-weight: 600; }
   .muted { color: #64748b; font-size: 12px; }
-  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
-  label { display: block; font-size: 12px; margin-bottom: 4px; color: #475569; }
-  input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #cdd5df; border-radius: 6px; }
+  label { display: block; font-size: 12px; margin-bottom: 4px; color: #475569; font-weight: 500; }
+  input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #cdd5df; border-radius: 6px; font-size: 12px; }
   textarea { min-height: 72px; resize: vertical; }
-  button { background: #1d4ed8; color: #fff; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+  button { background: #1d4ed8; color: #fff; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
   button:hover { background: #1e40af; }
   button.gray { background: #475569; }
   button.gray:hover { background: #334155; }
-  .tabs { display: flex; gap: 8px; margin: 14px 0; }
-  .tab { padding: 8px 12px; border-radius: 7px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
-  .tab.active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; font-weight: 600; }
+  .tabs { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+  .tab { padding: 8px 12px; border-radius: 7px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .tab.active { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
   .panel { display: none; }
   .panel.active { display: block; }
-  .result { margin-top: 8px; background: #0b1220; color: #c7f9cc; padding: 12px; border-radius: 8px; white-space: pre-wrap; overflow: auto; max-height: 360px; font-size: 12px; }
+  .result { margin-top: 8px; background: #0b1220; color: #c7f9cc; padding: 12px; border-radius: 8px; white-space: pre-wrap; overflow: auto; max-height: 400px; font-size: 11px; font-family: 'Courier New', monospace; }
   .result.error { color: #fecaca; }
-  .api-help { margin-top: 8px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; }
-  .api-help-title { font-size: 12px; color: #334155; font-weight: 600; margin-bottom: 6px; }
-  .api-help-list { margin: 0; padding-left: 18px; color: #475569; font-size: 12px; line-height: 1.6; }
+  .info-box { background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 12px; margin-bottom: 12px; border-radius: 6px; font-size: 12px; line-height: 1.6; }
+  .section-group { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>LMS User API 테스트 콘솔</h1>
-  <div class="muted">course/enrollment API를 브라우저에서 바로 테스트합니다. 기본 URL은 현재 접속 주소입니다.</div>
+  <h1>🎓 LMS 사용자 API 테스트 콘솔</h1>
+  <div class="muted">사용자용 강좌/수강 API를 브라우저에서 바로 테스트합니다</div>
 
+  <!-- 로그인 섹션 -->
   <div class="card">
-    <h2>1) 로그인/JWT</h2>
+    <h2>🔐 1) 로그인 & JWT</h2>
     <div class="grid">
       <div>
         <label>BASE URL</label>
         <input id="base-url" value="">
       </div>
       <div>
-        <label>사번</label>
+        <label>사번 (employeeNo)</label>
         <input id="employee-no" value="ADMIN001">
       </div>
       <div>
@@ -56,115 +56,177 @@
       </div>
     </div>
     <div class="row" style="margin-top: 10px;">
-      <button onclick="login()">로그인</button>
-      <button class="gray" onclick="logout()">로그아웃</button>
+      <button onclick="login()">🔓 로그인</button>
+      <button class="gray" onclick="logout()">🔒 로그아웃</button>
       <div id="login-state" class="muted"></div>
     </div>
   </div>
 
+  <!-- 탭 선택 -->
   <div class="tabs">
-    <button class="tab active" data-panel="panel-user">사용자 수강 API</button>
-    <button class="tab" data-panel="panel-admin">관리자 Course/Enrollment API</button>
-    <button class="tab" data-panel="panel-cert">이수증 API</button>
+    <button class="tab active" data-panel="panel-course">📚 강좌 조회</button>
+    <button class="tab" data-panel="panel-enroll">📝 수강 관리</button>
+    <button class="tab" data-panel="panel-calendar">📅 수강 캘린더</button>
+    <button class="tab" data-panel="panel-qna">❓ Q&A</button>
   </div>
 
-  <div id="panel-user" class="panel active">
+  <!-- 탭 1: 강좌 조회 -->
+  <div id="panel-course" class="panel active">
     <div class="card">
-      <h2>2) 사용자 수강 API (/api/user/enrollments)</h2>
-      <div class="api-help">
-        <div class="api-help-title">버튼별 필수 파라미터</div>
-        <ul class="api-help-list">
-          <li>신청 POST: userId, roundId</li>
-          <li>history/all/ongoing GET: userId</li>
-          <li>상세/완료/일정상세 GET: enrollmentId</li>
-          <li>진행률 PUT: enrollmentId, progress(0~100)</li>
-        </ul>
+      <h2>📚 강좌 목록 & 상세 조회</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 신청 가능한 모든 강좌와 각 차수별 신청 상태를 조회합니다.<br>
+        <strong>응답:</strong> courseId, title, category, roundId, roundNo, startDate, endDate, <strong style="color: #dc2626;">enrollmentStatus</strong> (NOT_ENROLLED|IN_PROGRESS|DONE)
       </div>
       <div class="grid">
-        <div><label>userId</label><input id="u-userId" value="1"></div>
-        <div><label>roundId</label><input id="u-roundId" value="1"></div>
-        <div><label>enrollmentId</label><input id="u-enrollmentId" value="1"></div>
-        <div><label>progress</label><input id="u-progress" value="50"></div>
-        <div><label>feedback</label><input id="u-feedback" value="좋은 교육이었습니다."></div>
-        <div><label>notification enabled</label><input id="u-enabled" value="true"></div>
+        <div><label>courseId (상세 조회용)</label><input id="course-courseId" value="1"></div>
       </div>
       <div class="row" style="margin-top: 10px;">
-        <button onclick="applyEnrollment()">신청 POST</button>
-        <button onclick="historyByUser()">history GET</button>
-        <button onclick="allByUser()">all GET</button>
-        <button onclick="ongoingByUser()">ongoing GET</button>
-        <button onclick="getEnrollmentDetail()">상세 GET</button>
-        <button onclick="updateProgress()">진행률 PUT</button>
-        <button onclick="completeEnrollment()">완료 PUT</button>
-        <button onclick="scheduleBasic()">일정 GET</button>
-        <button onclick="scheduleDetail()">일정상세 GET</button>
-        <button onclick="submitFeedback()">피드백 POST</button>
-        <button onclick="setNotifications()">알림설정 POST</button>
+        <button onclick="getCourseList()">📋 강좌 목록 GET</button>
+        <button onclick="getCourseDetail()">🔍 강좌 상세 GET</button>
       </div>
-      <div id="res-user" class="result">결과가 여기 표시됩니다.</div>
+      <div id="res-course" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>🎥 강의 목록 (시청률 & 완료 여부)</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 특정 강좌의 강의 목록을 조회하며, 각 강의별 시청 진도율과 완료 여부를 표시합니다.<br>
+        <strong>응답:</strong> lectureId, title, videoCount, completedVideoCount, <strong style="color: #dc2626;">watchPercentage</strong> (0-100), <strong style="color: #dc2626;">isCompleted</strong> (true/false)
+      </div>
+      <div class="grid">
+        <div><label>courseId</label><input id="lecture-courseId" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getLectureList()">📹 강의 목록 GET</button>
+      </div>
+      <div id="res-lecture" class="result">결과가 여기 표시됩니다.</div>
     </div>
   </div>
 
-  <div id="panel-admin" class="panel">
+  <!-- 탭 2: 수강 관리 -->
+  <div id="panel-enroll" class="panel">
     <div class="card">
-      <h2>3) 관리자 Course/Enrollment API</h2>
-      <div class="api-help">
-        <div class="api-help-title">버튼별 필수 파라미터</div>
-        <ul class="api-help-list">
-          <li>수강 등록 POST: userId, roundId</li>
-          <li>수강 진행률 PATCH: enrollmentId, progress</li>
-          <li>수강 상태 PUT: enrollmentId, status(NOT_STARTED/IN_PROGRESS/DONE)</li>
-          <li>수강 일정 PUT: roundId, endDate(yyyy-MM-dd)</li>
-          <li>강좌 생성/수정: title, description, category, targetRole, durationMin, thumbnailUrl</li>
-        </ul>
+      <h2>📝 수강 신청 & 기본 관리</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 강좌 차수에 신청하고, 본인의 수강 현황을 조회합니다.<br>
+        <strong>JWT 인증:</strong> 항상 로그인한 사용자 본인의 userId로 자동 처리됩니다 (타인 신청 불가)
+      </div>
+      <div class="section-group">
+        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+          <h3>▶ 신청</h3>
+          <div class="grid">
+            <div><label>roundId</label><input id="enroll-roundId" value="1"></div>
+          </div>
+          <button style="width: 100%; margin-top: 8px;" onclick="applyEnrollment()">✅ 수강 신청 POST</button>
+        </div>
+
+        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+          <h3>▶ 내 수강 조회</h3>
+          <div class="row" style="gap: 6px;">
+            <button onclick="getMyHistory()">📋 수강 이력 GET</button>
+            <button onclick="getMyAll()">📊 전체 수강 GET</button>
+            <button onclick="getMyOngoing()">⏳ 수강중 교육 GET</button>
+          </div>
+        </div>
+      </div>
+      <div id="res-enroll" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ 수강 진도 관리</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 수강 진행률을 업데이트하고, 수강 완료를 처리합니다.<br>
+        <strong style="color: #dc2626;">조건:</strong> 완료 시 진도율이 80% 이상이어야 합니다!
       </div>
       <div class="grid">
-        <div><label>courseId</label><input id="a-courseId" value="1"></div>
-        <div><label>roundId</label><input id="a-roundId" value="1"></div>
-        <div><label>userId</label><input id="a-userId" value="1"></div>
-        <div><label>enrollmentId</label><input id="a-enrollmentId" value="1"></div>
-        <div><label>progress</label><input id="a-progress" value="60"></div>
-        <div><label>status</label><input id="a-status" value="IN_PROGRESS"></div>
-        <div><label>endDate(yyyy-MM-dd)</label><input id="a-endDate" value="2026-12-31"></div>
-        <div><label>title</label><input id="a-title" value="신규 강좌"></div>
-        <div><label>description</label><input id="a-description" value="강좌 설명"></div>
-        <div><label>category</label><input id="a-category" value="공통"></div>
-        <div><label>targetRole(int)</label><input id="a-targetRole" value="1"></div>
-        <div><label>durationMin</label><input id="a-durationMin" value="120"></div>
-        <div><label>thumbnailUrl</label><input id="a-thumbnailUrl" value="https://example.com/thumb.png"></div>
+        <div><label>enrollmentId</label><input id="progress-enrollmentId" value="1"></div>
+        <div><label>progress (0~100)</label><input id="progress-value" value="50"></div>
       </div>
       <div class="row" style="margin-top: 10px;">
-        <button onclick="call('GET','/api/admin/courses',null,'res-admin')">강좌목록 GET</button>
-        <button onclick="adminCourseOne()">강좌단건 GET</button>
-        <button onclick="adminCourseCreate()">강좌생성 POST</button>
-        <button onclick="adminCourseUpdate()">강좌수정 PUT</button>
-        <button onclick="adminCourseDelete()">강좌삭제 DELETE</button>
-        <button onclick="adminEnroll()">수강등록 POST</button>
-        <button onclick="adminByUser()">직원별수강 GET</button>
-        <button onclick="adminByCourse()">강좌별수강 GET</button>
-        <button onclick="adminAllEnroll()">전체수강 GET</button>
-        <button onclick="adminUpdateProgress()">수강진행률 PATCH</button>
-        <button onclick="adminChangeStatus()">수강상태 PUT</button>
-        <button onclick="adminManageSchedule()">수강일정 PUT</button>
-        <button onclick="adminStatistics()">통계 GET</button>
+        <button onclick="getEnrollmentDetail()">🔍 수강 상세 GET</button>
+        <button onclick="updateProgress()">📈 진행률 업데이트 PUT</button>
+        <button onclick="completeEnrollment()">✨ 수강 완료 PUT</button>
       </div>
-      <div id="res-admin" class="result">결과가 여기 표시됩니다.</div>
+      <div id="res-progress" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>📅 수강 일정 조회</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 특정 수강의 상세 일정 정보(시작일, 종료일, 교육시간 등)를 조회합니다.
+      </div>
+      <div class="grid">
+        <div><label>enrollmentId</label><input id="schedule-enrollmentId" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getScheduleBasic()">📅 일정 조회 GET</button>
+        <button onclick="getScheduleDetail()">📅 일정 상세 GET</button>
+      </div>
+      <div id="res-schedule" class="result">결과가 여기 표시됩니다.</div>
     </div>
   </div>
 
-  <div id="panel-cert" class="panel">
+  <!-- 탭 3: 수강 캘린더 -->
+  <div id="panel-calendar" class="panel">
     <div class="card">
-      <h2>4) 이수증 API (/api/certificate)</h2>
-      <div class="grid">
-        <div><label>userId</label><input id="c-userId" value="1"></div>
-        <div><label>courseId</label><input id="c-courseId" value="1"></div>
-        <div><label>certificateId</label><input id="c-certId" value="1"></div>
+      <h2>📅 수강 캘린더</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 로그인한 사용자의 모든 강좌 일정을 캘린더 형식으로 조회합니다.<br>
+        <strong>응답:</strong> courseTitle, startDate, endDate, <strong style="color: #dc2626;">status</strong> (NOT_STARTED|IN_PROGRESS|DONE), progress
       </div>
       <div class="row" style="margin-top: 10px;">
-        <button onclick="generateCertificate()">generate POST</button>
-        <button onclick="downloadCertificate()">download GET</button>
+        <button onclick="getEnrollmentCalendar()" style="width: 100%;">📅 수강 캘린더 조회 GET /api/user/calendar</button>
       </div>
-      <div id="res-cert" class="result">결과가 여기 표시됩니다.</div>
+      <div id="res-calendar" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- 탭 4: Q&A -->
+  <div id="panel-qna" class="panel">
+    <div class="card">
+      <h2>❓ Q&A 테스트</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 강좌별 질문 조회, 내 질문 조회, 질문/답변 등록·수정·삭제를 테스트합니다.<br>
+        <strong>요청 형식:</strong> 질문은 <strong>courseId, title, content</strong>, 답변은 <strong>questionId, content</strong> 를 사용합니다.
+      </div>
+
+      <div class="section-group">
+        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+          <h3>▶ 질문 작성 / 조회 / 관리</h3>
+          <div class="grid">
+            <div><label>courseId</label><input id="q-courseId" value="1"></div>
+            <div><label>questionId</label><input id="q-questionId" value="1"></div>
+            <div><label>title</label><input id="q-title" value="강좌 관련 질문입니다."></div>
+            <div><label>content</label><textarea id="q-content">질문 내용을 입력하세요.</textarea></div>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <button onclick="createQuestion()">질문 등록 POST</button>
+            <button onclick="getMyQuestions()">내 질문 GET</button>
+            <button onclick="getCourseQuestions()">강좌 질문 GET</button>
+            <button onclick="getQuestionDetail()">질문 상세 GET</button>
+            <button onclick="updateQuestion()">질문 수정 PUT</button>
+            <button onclick="deleteQuestion()">질문 삭제 DELETE</button>
+          </div>
+          <div id="res-qna-question" class="result">결과가 여기 표시됩니다.</div>
+        </div>
+
+        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+          <h3>▶ 답변 작성 / 조회 / 관리</h3>
+          <div class="grid">
+            <div><label>questionId</label><input id="a-questionId" value="1"></div>
+            <div><label>answerId</label><input id="a-answerId" value="1"></div>
+            <div><label>content</label><textarea id="a-content">답변 내용을 입력하세요.</textarea></div>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            <button onclick="createAnswer()">답변 등록 POST</button>
+            <button onclick="getAnswers()">답변 목록 GET</button>
+            <button onclick="updateAnswer()">답변 수정 PUT</button>
+            <button onclick="deleteAnswer()">답변 삭제 DELETE</button>
+          </div>
+          <div id="res-qna-answer" class="result">결과가 여기 표시됩니다.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -183,69 +245,32 @@
     $("login-state").textContent = text;
   }
 
-  function readRequired(resultId, ids) {
-    const values = {};
-    for (const id of ids) {
-      const v = ($(id).value || "").trim();
-      if (!v) {
-        const el = $(resultId);
-        el.className = "result error";
-        el.textContent = `필수값 누락: ${id}`;
-        return null;
-      }
-      values[id] = v;
-    }
-    return values;
-  }
-
-
-  async function call(method, path, body, resultId, extraHeaders) {
+  async function call(method, path, body, resultId) {
     const el = $(resultId);
     el.className = "result";
     el.textContent = "요청 중...";
 
     try {
-      const headers = Object.assign({ "Content-Type": "application/json" }, extraHeaders || {});
+      const headers = { "Content-Type": "application/json" };
       if (TOKEN) headers.Authorization = "Bearer " + TOKEN;
       const options = { method: method, headers: headers };
       if (body) options.body = JSON.stringify(body);
 
       const res = await fetch(base() + path, options);
-      const contentType = res.headers.get("content-type") || "";
-
-      if (contentType.includes("application/pdf")) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        el.textContent = `[${res.status} ${res.statusText}] PDF 열기 성공`;
-        return;
-      }
-
       const text = await res.text();
-      let output = `[${res.status} ${res.statusText}]\n`;
       let json = null;
       try { json = JSON.parse(text); } catch {}
 
+      let output = `[${res.status} ${res.statusText}]\n`;
       if (!res.ok) {
         el.className = "result error";
-        if (json) {
-          // 주요 에러 필드만 추출
-          let msg = json.message || json.error || json.detail || "";
-          let stack = json.stack || "";
-          output += (msg ? `\n메시지: ${msg}` : "");
-          if (json.errors) output += `\nerrors: ${JSON.stringify(json.errors, null, 2)}`;
-          if (stack) output += `\nstack: ${stack}`;
-          output += `\n전체 응답: ` + JSON.stringify(json, null, 2);
-        } else {
-          output += `\n${text}`;
-        }
-      } else {
-        output += "\n" + (json ? JSON.stringify(json, null, 2) : text);
+        if (json && json.message) output += `\n❌ 에러: ${json.message}`;
       }
+      output += "\n" + (json ? JSON.stringify(json, null, 2) : text);
       el.textContent = output;
     } catch (e) {
       el.className = "result error";
-      el.textContent = "에러: " + e.message;
+      el.textContent = "❌ 에러: " + e.message;
     }
   }
 
@@ -264,155 +289,230 @@
       const data = await res.json();
       TOKEN = data.token || "";
       localStorage.setItem("userTestToken", TOKEN);
-      setLoginState("로그인됨: " + (data.name || "") + " / " + (data.role || ""));
+      setLoginState("✅ 로그인됨: " + (data.name || "") + " / " + (data.role || ""));
     } catch (e) {
-      setLoginState("로그인 실패: " + e.message);
+      setLoginState("❌ 로그인 실패: " + e.message);
     }
   }
 
   function logout() {
     TOKEN = "";
     localStorage.removeItem("userTestToken");
-    setLoginState("로그아웃됨");
+    setLoginState("🔒 로그아웃됨");
   }
 
+  // ===== 강좌 조회 =====
+  function getCourseList() {
+    call("GET", "/api/user/courses", null, "res-course");
+  }
+  function getCourseDetail() {
+    const courseId = $("course-courseId").value.trim();
+    if (!courseId) {
+      $("res-course").className = "result error";
+      $("res-course").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/courses/" + courseId, null, "res-course");
+  }
+
+  // ===== 강의 목록 =====
+  function getLectureList() {
+    const courseId = $("lecture-courseId").value.trim();
+    if (!courseId) {
+      $("res-lecture").className = "result error";
+      $("res-lecture").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/courses/" + courseId + "/lectures", null, "res-lecture");
+  }
+
+  // ===== 수강 신청 & 조회 =====
   function applyEnrollment() {
-    const v = readRequired("res-user", ["u-userId", "u-roundId"]);
-    if (!v) return;
-    call("POST", "/api/user/enrollments?userId=" + v["u-userId"] + "&roundId=" + v["u-roundId"], null, "res-user");
+    const roundId = $("enroll-roundId").value.trim();
+    if (!roundId) {
+      $("res-enroll").className = "result error";
+      $("res-enroll").textContent = "❌ roundId를 입력하세요";
+      return;
+    }
+    call("POST", "/api/user/enrollments?roundId=" + roundId, null, "res-enroll");
   }
-  function historyByUser() {
-    const v = readRequired("res-user", ["u-userId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/history/" + v["u-userId"], null, "res-user");
+  function getMyHistory() {
+    call("GET", "/api/user/enrollments/history", null, "res-enroll");
   }
-  function allByUser() {
-    const v = readRequired("res-user", ["u-userId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/all/" + v["u-userId"], null, "res-user");
+  function getMyAll() {
+    call("GET", "/api/user/enrollments/all", null, "res-enroll");
   }
-  function ongoingByUser() {
-    const v = readRequired("res-user", ["u-userId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/ongoing/" + v["u-userId"], null, "res-user");
+  function getMyOngoing() {
+    call("GET", "/api/user/enrollments/ongoing", null, "res-enroll");
   }
+
+  // ===== 진도 관리 =====
   function getEnrollmentDetail() {
-    const v = readRequired("res-user", ["u-enrollmentId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"], null, "res-user");
+    const enrollmentId = $("progress-enrollmentId").value.trim();
+    if (!enrollmentId) {
+      $("res-progress").className = "result error";
+      $("res-progress").textContent = "❌ enrollmentId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/enrollments/" + enrollmentId, null, "res-progress");
   }
   function updateProgress() {
-    const v = readRequired("res-user", ["u-enrollmentId", "u-progress"]);
-    if (!v) return;
-    call("PUT", "/api/user/enrollments/" + v["u-enrollmentId"] + "/progress?progress=" + v["u-progress"], null, "res-user");
+    const enrollmentId = $("progress-enrollmentId").value.trim();
+    const progress = $("progress-value").value.trim();
+    if (!enrollmentId || !progress) {
+      $("res-progress").className = "result error";
+      $("res-progress").textContent = "❌ enrollmentId와 progress를 입력하세요";
+      return;
+    }
+    call("PUT", "/api/user/enrollments/" + enrollmentId + "/progress?progress=" + progress, null, "res-progress");
   }
   function completeEnrollment() {
-    const v = readRequired("res-user", ["u-enrollmentId"]);
-    if (!v) return;
-    call("PUT", "/api/user/enrollments/" + v["u-enrollmentId"] + "/complete", null, "res-user");
-  }
-  function scheduleBasic() {
-    const v = readRequired("res-user", ["u-enrollmentId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"] + "/schedule", null, "res-user");
-  }
-  function scheduleDetail() {
-    const v = readRequired("res-user", ["u-enrollmentId"]);
-    if (!v) return;
-    call("GET", "/api/user/enrollments/" + v["u-enrollmentId"] + "/schedule/detail", null, "res-user");
-  }
-  function submitFeedback() {
-    const v = readRequired("res-user", ["u-enrollmentId", "u-feedback"]);
-    if (!v) return;
-    call("POST", "/api/user/enrollments/" + v["u-enrollmentId"] + "/feedback?feedback=" + encodeURIComponent(v["u-feedback"]), null, "res-user");
-  }
-  function setNotifications() {
-    const v = readRequired("res-user", ["u-enrollmentId", "u-enabled"]);
-    if (!v) return;
-    call("POST", "/api/user/enrollments/" + v["u-enrollmentId"] + "/notifications?enabled=" + v["u-enabled"], null, "res-user");
+    const enrollmentId = $("progress-enrollmentId").value.trim();
+    if (!enrollmentId) {
+      $("res-progress").className = "result error";
+      $("res-progress").textContent = "❌ enrollmentId를 입력하세요";
+      return;
+    }
+    call("PUT", "/api/user/enrollments/" + enrollmentId + "/complete", null, "res-progress");
   }
 
-  function adminEnroll() {
-    const v = readRequired("res-admin", ["a-userId", "a-roundId"]);
-    if (!v) return;
-    call("POST", "/api/admin/enrollments?userId=" + v["a-userId"] + "&roundId=" + v["a-roundId"], null, "res-admin");
+  // ===== 일정 =====
+  function getScheduleBasic() {
+    call("GET", "/api/user/enrollments/schedule", null, "res-schedule");
   }
-  function adminByUser() {
-    const v = readRequired("res-admin", ["a-userId"]);
-    if (!v) return;
-    call("GET", "/api/admin/enrollments/user/" + v["a-userId"], null, "res-admin");
-  }
-  function adminByCourse() {
-    const v = readRequired("res-admin", ["a-courseId"]);
-    if (!v) return;
-    call("GET", "/api/admin/enrollments/course/" + v["a-courseId"], null, "res-admin");
-  }
-  function adminAllEnroll() {
-    call("GET", "/api/admin/enrollments", null, "res-admin");
-  }
-  function adminUpdateProgress() {
-    const v = readRequired("res-admin", ["a-enrollmentId", "a-progress"]);
-    if (!v) return;
-    call("PATCH", "/api/admin/enrollments/" + v["a-enrollmentId"] + "/progress?progress=" + v["a-progress"], null, "res-admin");
-  }
-  function adminChangeStatus() {
-    const v = readRequired("res-admin", ["a-enrollmentId", "a-status"]);
-    if (!v) return;
-    call("PUT", "/api/admin/enrollments/" + v["a-enrollmentId"] + "/status?status=" + encodeURIComponent(v["a-status"]), null, "res-admin");
-  }
-  function adminManageSchedule() {
-    const v = readRequired("res-admin", ["a-roundId", "a-endDate"]);
-    if (!v) return;
-    call("PUT", "/api/admin/enrollments/schedule/" + v["a-roundId"] + "?endDate=" + encodeURIComponent(v["a-endDate"]), null, "res-admin");
-  }
-  function adminStatistics() {
-    call("GET", "/api/admin/enrollments/statistics", null, "res-admin");
-  }
-  function adminCourseOne() {
-    const v = readRequired("res-admin", ["a-courseId"]);
-    if (!v) return;
-    call("GET", "/api/admin/courses/" + v["a-courseId"], null, "res-admin");
-  }
-  function adminCourseCreate() {
-    const v = readRequired("res-admin", ["a-title", "a-description", "a-category", "a-targetRole", "a-durationMin", "a-thumbnailUrl"]);
-    if (!v) return;
-    call("POST", "/api/admin/courses", {
-      title: v["a-title"],
-      description: v["a-description"],
-      category: v["a-category"],
-      targetRole: Number(v["a-targetRole"]),
-      durationMin: Number(v["a-durationMin"]),
-      thumbnailUrl: v["a-thumbnailUrl"]
-    }, "res-admin");
-  }
-  function adminCourseUpdate() {
-    const v = readRequired("res-admin", ["a-courseId", "a-title", "a-description", "a-category", "a-targetRole", "a-durationMin", "a-thumbnailUrl"]);
-    if (!v) return;
-    call("PUT", "/api/admin/courses/" + v["a-courseId"], {
-      title: v["a-title"],
-      description: v["a-description"],
-      category: v["a-category"],
-      targetRole: Number(v["a-targetRole"]),
-      durationMin: Number(v["a-durationMin"]),
-      thumbnailUrl: v["a-thumbnailUrl"]
-    }, "res-admin");
-  }
-  function adminCourseDelete() {
-    const v = readRequired("res-admin", ["a-courseId"]);
-    if (!v) return;
-    call("DELETE", "/api/admin/courses/" + v["a-courseId"], null, "res-admin");
+  function getScheduleDetail() {
+    const enrollmentId = $("schedule-enrollmentId").value.trim();
+    if (!enrollmentId) {
+      $("res-schedule").className = "result error";
+      $("res-schedule").textContent = "❌ enrollmentId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/enrollments/" + enrollmentId + "/schedule/detail", null, "res-schedule");
   }
 
-  function generateCertificate() {
-    call("POST", "/api/certificate/generate", {
-      userId: Number($("c-userId").value),
-      courseId: Number($("c-courseId").value)
-    }, "res-cert");
-  }
-  function downloadCertificate() {
-    call("GET", "/api/certificate/download/" + $("c-certId").value, null, "res-cert");
+  // ===== 캘린더 =====
+  function getEnrollmentCalendar() {
+    call("GET", "/api/user/calendar", null, "res-calendar");
   }
 
+  // ===== Q&A =====
+  function createQuestion() {
+    const courseId = $("q-courseId").value.trim();
+    const title = $("q-title").value.trim();
+    const content = $("q-content").value.trim();
+    if (!courseId || !title || !content) {
+      $("res-qna-question").className = "result error";
+      $("res-qna-question").textContent = "❌ courseId, title, content를 모두 입력하세요";
+      return;
+    }
+    call("POST", "/api/qna/questions", {
+      courseId: Number(courseId),
+      title: title,
+      content: content
+    }, "res-qna-question");
+  }
+
+  function getMyQuestions() {
+    call("GET", "/api/qna/questions/my", null, "res-qna-question");
+  }
+
+  function getCourseQuestions() {
+    const courseId = $("q-courseId").value.trim();
+    if (!courseId) {
+      $("res-qna-question").className = "result error";
+      $("res-qna-question").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/qna/questions?courseId=" + encodeURIComponent(courseId), null, "res-qna-question");
+  }
+
+  function getQuestionDetail() {
+    const questionId = $("q-questionId").value.trim();
+    if (!questionId) {
+      $("res-qna-question").className = "result error";
+      $("res-qna-question").textContent = "❌ questionId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/qna/questions/" + questionId, null, "res-qna-question");
+  }
+
+  function updateQuestion() {
+    const questionId = $("q-questionId").value.trim();
+    const courseId = $("q-courseId").value.trim();
+    const title = $("q-title").value.trim();
+    const content = $("q-content").value.trim();
+    if (!questionId || !courseId || !title || !content) {
+      $("res-qna-question").className = "result error";
+      $("res-qna-question").textContent = "❌ questionId, courseId, title, content를 모두 입력하세요";
+      return;
+    }
+    call("PUT", "/api/qna/questions/" + questionId, {
+      courseId: Number(courseId),
+      title: title,
+      content: content
+    }, "res-qna-question");
+  }
+
+  function deleteQuestion() {
+    const questionId = $("q-questionId").value.trim();
+    if (!questionId) {
+      $("res-qna-question").className = "result error";
+      $("res-qna-question").textContent = "❌ questionId를 입력하세요";
+      return;
+    }
+    call("DELETE", "/api/qna/questions/" + questionId, null, "res-qna-question");
+  }
+
+  function createAnswer() {
+    const questionId = $("a-questionId").value.trim();
+    const content = $("a-content").value.trim();
+    if (!questionId || !content) {
+      $("res-qna-answer").className = "result error";
+      $("res-qna-answer").textContent = "❌ questionId, content를 모두 입력하세요";
+      return;
+    }
+    call("POST", "/api/qna/answers", {
+      questionId: Number(questionId),
+      content: content
+    }, "res-qna-answer");
+  }
+
+  function getAnswers() {
+    const questionId = $("a-questionId").value.trim();
+    if (!questionId) {
+      $("res-qna-answer").className = "result error";
+      $("res-qna-answer").textContent = "❌ questionId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/qna/answers?questionId=" + encodeURIComponent(questionId), null, "res-qna-answer");
+  }
+
+  function updateAnswer() {
+    const answerId = $("a-answerId").value.trim();
+    const questionId = $("a-questionId").value.trim();
+    const content = $("a-content").value.trim();
+    if (!answerId || !questionId || !content) {
+      $("res-qna-answer").className = "result error";
+      $("res-qna-answer").textContent = "❌ answerId, questionId, content를 모두 입력하세요";
+      return;
+    }
+    call("PUT", "/api/qna/answers/" + answerId, {
+      questionId: Number(questionId),
+      content: content
+    }, "res-qna-answer");
+  }
+
+  function deleteAnswer() {
+    const answerId = $("a-answerId").value.trim();
+    if (!answerId) {
+      $("res-qna-answer").className = "result error";
+      $("res-qna-answer").textContent = "❌ answerId를 입력하세요";
+      return;
+    }
+    call("DELETE", "/api/qna/answers/" + answerId, null, "res-qna-answer");
+  }
+
+  // 탭 선택
   document.querySelectorAll(".tab").forEach(function(btn) {
     btn.addEventListener("click", function() {
       document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
@@ -423,7 +523,7 @@
   });
 
   $("base-url").value = window.location.origin;
-  if (TOKEN) setLoginState("저장된 토큰 사용 중");
+  if (TOKEN) setLoginState("✅ 저장된 토큰 사용 중");
 </script>
 </body>
 </html>

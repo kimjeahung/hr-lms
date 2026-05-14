@@ -139,11 +139,22 @@ public class EnrollmentService {
         return new EnrollmentResponse(enrollment);
     }
 
-    /** 수강 완료 처리 */
+    /** 수강 완료 처리 (조건부) */
     @Transactional
     public EnrollmentResponse completeEnrollment(Long enrollmentId) {
         Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        
+        // 조건 1: 진도율 80% 이상 확인
+        if (enrollment.getProgress() < 80) {
+            throw new IllegalArgumentException("진도율 80% 이상이어야 이수 처리가 가능합니다. 현재 진도율: " + enrollment.getProgress() + "%");
+        }
+        
+        // TODO: 조건 2: 시험 합격 여부 확인 (attempts 테이블에서 is_passed = 1)
+        // TODO: 조건 3: 퀴즈 합격 여부 확인 (필수일 경우)
+        
+        // 모든 조건을 만족하면 완료 처리
+        enrollment.changeStatus(Enrollment.Status.DONE);
         enrollment.updateProgress(100);
         return new EnrollmentResponse(enrollment);
     }

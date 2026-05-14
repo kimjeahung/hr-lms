@@ -137,6 +137,7 @@
     <div class="tab" onclick="switchTab('enrollment')">📝 수강등록</div>
     <div class="tab" onclick="switchTab('lecture')">📁 단원/영상</div>
     <div class="tab" onclick="switchTab('notice')">📢 공지사항</div>
+    <div class="tab" onclick="switchTab('qna')">❓ Q&A</div>
     <div class="tab" onclick="switchTab('quiz')">❓ 퀴즈/시험</div>
   </div>
 
@@ -467,6 +468,71 @@
       </div>
     </div>
 
+    <!-- Q&A -->
+    <div class="panel" id="panel-qna">
+      <div class="card">
+        <h3>Q&A 강좌별 질문 조회 GET /api/qna/questions?courseId={courseId}</h3>
+        <div class="form-row">
+          <div class="form-group"><label>강좌 ID</label><input id="qa-courseId" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getQnaQuestions()">조회</button>
+        </div>
+        <div id="res-qna-question-list" class="result">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>Q&A 내 질문 조회 GET /api/qna/questions/my</h3>
+        <button onclick="apiCall('GET','/api/qna/questions/my',null,'res-qna-my')">조회</button>
+        <div id="res-qna-my" class="result" style="margin-top:10px">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>질문 등록 POST /api/qna/questions</h3>
+        <div class="form-row">
+          <div class="form-group"><label>강좌 ID</label><input id="qa-courseId2" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>제목</label><input id="qa-title" placeholder="질문 제목" style="width:220px"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label>내용</label>
+          <textarea id="qa-content" placeholder="질문 내용" style="width:100%;max-width:500px"></textarea>
+        </div>
+        <button onclick="createQnaQuestion()">질문 등록</button>
+        <div id="res-qna-question-create" class="result" style="margin-top:10px">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>질문 단건/수정/삭제</h3>
+        <div class="form-row">
+          <div class="form-group"><label>질문 ID</label><input id="qa-qid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getQnaQuestion()">단건조회</button>
+          <button class="danger" onclick="deleteQnaQuestion()">삭제</button>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div class="form-group"><label>강좌 ID</label><input id="qa-courseId3" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>제목</label><input id="qa-title2" placeholder="수정할 제목" style="width:220px"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label>내용</label>
+          <textarea id="qa-content2" placeholder="수정할 내용" style="width:100%;max-width:500px"></textarea>
+        </div>
+        <button onclick="updateQnaQuestion()">수정</button>
+        <div id="res-qna-question-one" class="result" style="margin-top:10px">결과가 여기에 표시됩니다</div>
+      </div>
+      <div class="card">
+        <h3>답변 목록/등록/수정/삭제</h3>
+        <div class="form-row">
+          <div class="form-group"><label>질문 ID</label><input id="qa-a-qid" type="number" placeholder="1" style="width:80px"></div>
+          <button onclick="getQnaAnswers()">답변목록</button>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <div class="form-group"><label>답변 ID</label><input id="qa-aid" type="number" placeholder="1" style="width:80px"></div>
+          <div class="form-group"><label>답변 내용</label><input id="qa-a-content" placeholder="답변 내용" style="width:220px"></div>
+        </div>
+        <div class="form-row" style="margin-top:8px">
+          <button onclick="createQnaAnswer()">답변등록</button>
+          <button onclick="updateQnaAnswer()">답변수정</button>
+          <button class="danger" onclick="deleteQnaAnswer()">답변삭제</button>
+        </div>
+        <div id="res-qna-answer" class="result" style="margin-top:10px">결과가 여기에 표시됩니다</div>
+      </div>
+    </div>
+
     <!-- 퀴즈/시험 -->
     <div class="panel" id="panel-quiz">
       <div class="card">
@@ -785,6 +851,49 @@ function getNotice() {
 }
 function deleteNotice() {
   apiCall('DELETE', '/api/admin/notices/' + document.getElementById('n-id').value, null, 'res-notice-one');
+}
+
+// Q&A
+function getQnaQuestions() {
+  apiCall('GET', '/api/qna/questions?courseId=' + document.getElementById('qa-courseId').value, null, 'res-qna-question-list');
+}
+function createQnaQuestion() {
+  apiCall('POST', '/api/qna/questions', {
+    courseId: parseInt(document.getElementById('qa-courseId2').value),
+    title: document.getElementById('qa-title').value,
+    content: document.getElementById('qa-content').value
+  }, 'res-qna-question-create');
+}
+function getQnaQuestion() {
+  apiCall('GET', '/api/qna/questions/' + document.getElementById('qa-qid').value, null, 'res-qna-question-one');
+}
+function updateQnaQuestion() {
+  apiCall('PUT', '/api/qna/questions/' + document.getElementById('qa-qid').value, {
+    courseId: parseInt(document.getElementById('qa-courseId3').value),
+    title: document.getElementById('qa-title2').value,
+    content: document.getElementById('qa-content2').value
+  }, 'res-qna-question-one');
+}
+function deleteQnaQuestion() {
+  apiCall('DELETE', '/api/qna/questions/' + document.getElementById('qa-qid').value, null, 'res-qna-question-one');
+}
+function getQnaAnswers() {
+  apiCall('GET', '/api/qna/answers?questionId=' + document.getElementById('qa-a-qid').value, null, 'res-qna-answer');
+}
+function createQnaAnswer() {
+  apiCall('POST', '/api/qna/answers', {
+    questionId: parseInt(document.getElementById('qa-a-qid').value),
+    content: document.getElementById('qa-a-content').value
+  }, 'res-qna-answer');
+}
+function updateQnaAnswer() {
+  apiCall('PUT', '/api/qna/answers/' + document.getElementById('qa-aid').value, {
+    questionId: parseInt(document.getElementById('qa-a-qid').value),
+    content: document.getElementById('qa-a-content').value
+  }, 'res-qna-answer');
+}
+function deleteQnaAnswer() {
+  apiCall('DELETE', '/api/qna/answers/' + document.getElementById('qa-aid').value, null, 'res-qna-answer');
 }
 
 // 퀴즈/시험
