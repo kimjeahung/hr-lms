@@ -22,16 +22,18 @@ import java.util.List;
 public class EnrollmentUserController {
 
     private final EnrollmentService enrollmentService;
-    private final EntityManager entityManager;
-    private final UserRepository userRepository;
+    private final EntityManager     entityManager;
+    private final UserRepository    userRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    // 수강 신청 - 신청 즉시 IN_PROGRESS
+    /**
+     * 수강 신청 — JWT에서 userId 추출 (타인 명의 신청 방지)
+     * [수정] @RequestParam Long userId 제거 → getLoginUserId() 로 대체
+     */
     @PostMapping
-    public ResponseEntity<EnrollmentResponse> applyEnrollment(
-            @RequestParam Long userId,
-            @RequestParam Long roundId) {
+    public ResponseEntity<EnrollmentResponse> applyEnrollment(@RequestParam Long roundId) {
+        Long userId = getLoginUserId();
         return ResponseEntity.ok(enrollmentService.applyEnrollment(userId, roundId));
     }
 
@@ -76,7 +78,7 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(enrollmentService.completeEnrollment(enrollmentId));
     }
 
-    // 수강 피드백 제출 // 실제로는 피드백 DTO를 만들어서 받는 것이 좋지만, 간단히 String으로 받도록 했습니다. 추후 변경
+    // 수강 피드백 제출 (stub — 추후 구현)
     @PostMapping("/{enrollmentId}/feedback")
     public ResponseEntity<String> submitEnrollmentFeedback(
             @PathVariable Long enrollmentId,
@@ -84,7 +86,7 @@ public class EnrollmentUserController {
         return ResponseEntity.ok("피드백이 제출되었습니다.");
     }
 
-    // 수강 알림 설정// 실제로는 알림 설정 DTO를 만들어서 받는 것이 좋지만, 간단히 boolean으로 받도록 했습니다. 추후 변경
+    // 수강 알림 설정 (stub — 추후 구현)
     @PostMapping("/{enrollmentId}/notifications")
     public ResponseEntity<String> setEnrollmentNotifications(
             @PathVariable Long enrollmentId,
@@ -92,15 +94,16 @@ public class EnrollmentUserController {
         return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
     }
 
-    // 수강 캘린더(수강신청스케줄)
+    // 수강 캘린더 (기본)
     @GetMapping("/{enrollmentId}/schedule")
     public ResponseEntity<String> getEnrollmentSchedule(@PathVariable Long enrollmentId) {
         return ResponseEntity.ok("수강 일정 정보입니다.");
     }
 
-    // 수강 캘린더 상세 (기존 /schedule 유지, 신규 확장 API)
+    // 수강 캘린더 상세
     @GetMapping("/{enrollmentId}/schedule/detail")
-    public ResponseEntity<EnrollmentScheduleResponse> getEnrollmentScheduleDetail(@PathVariable Long enrollmentId) {
+    public ResponseEntity<EnrollmentScheduleResponse> getEnrollmentScheduleDetail(
+            @PathVariable Long enrollmentId) {
         Enrollment enrollment = findEnrollmentWithRound(enrollmentId);
 
         Integer durationMin = enrollment.getRound().getCourse().getDurationMin();
@@ -125,8 +128,14 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(response);
     }
 
+    // ──────────────────────────────────────────────────────────
+    // private
+    // ──────────────────────────────────────────────────────────
+
+    /** JWT 토큰에서 인증된 사용자의 userId 추출 */
     private Long getLoginUserId() {
-        String employeeNo = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String employeeNo = (String) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
         return userRepository.findByEmployeeNo(employeeNo)
                 .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."))
                 .getUserId();
@@ -136,10 +145,10 @@ public class EnrollmentUserController {
         try {
             return entityManager.createQuery(
                             "select e from Enrollment e " +
-                                    "join fetch e.user u " +
-                                    "join fetch e.round r " +
-                                    "join fetch r.course c " +
-                                    "where e.enrollmentId = :id", Enrollment.class)
+                            "join fetch e.user u " +
+                            "join fetch e.round r " +
+                            "join fetch r.course c " +
+                            "where e.enrollmentId = :id", Enrollment.class)
                     .setParameter("id", enrollmentId)
                     .getSingleResult();
         } catch (NoResultException ex) {
