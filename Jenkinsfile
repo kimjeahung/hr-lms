@@ -29,6 +29,27 @@ pipeline {
                         cp "$ENV_FILE" .env
                         sed -i 's/\r$//' .env
                         chmod 600 .env
+
+                                                # 필수 키 검증
+                                                required_keys="MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD SPRING_DATASOURCE_USERNAME SPRING_DATASOURCE_PASSWORD JWT_SECRET"
+                                                for key in $required_keys; do
+                                                    if ! awk -F= -v k="$key" '$1==k && length($2)>0 {found=1} END{exit(found?0:1)}' .env; then
+                                                        echo "[ERROR] .env 필수값 누락: $key"
+                                                        exit 1
+                                                    fi
+                                                done
+
+                                                # DB명/URL 불일치 방지: SPRING_DATASOURCE_URL을 MYSQL_DATABASE 기준으로 고정
+                                                DB_NAME=$(awk -F= '/^MYSQL_DATABASE=/{print $2; exit}' .env | tr -d '\r')
+                                                [ -n "$DB_NAME" ] || DB_NAME=lms
+                                                sed -i '/^SPRING_DATASOURCE_URL=/d' .env
+                                                echo "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8" >> .env
+
+                                                # 누락되어 경고가 나던 토큰은 기본값 주입(운영에선 credential 값 사용 권장)
+                                                if ! awk -F= '/^CERTIFICATE_INTERNAL_API_TOKEN=/{found=1} END{exit(found?0:1)}' .env; then
+                                                    echo "CERTIFICATE_INTERNAL_API_TOKEN=change-me-in-prod" >> .env
+                                                fi
+
                         docker compose --env-file .env config -q
                     '''
                 }
