@@ -7,12 +7,15 @@ import java.time.LocalDate;
 @Getter
 @Builder
 public class EnrollmentCalendarResponse {
-    private Long enrollmentId;
+    private Long roundId;
     private Long courseId;
     private String courseTitle;
     private String category;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String status; // NOT_STARTED, IN_PROGRESS, DONE
-    private Integer progress; // 0~100
+
+    // 내 수강 정보 (없으면 null)
+    private Long enrollmentId;
+    private String myStatus; // NOT_STARTED, IN_PROGRESS, DONE, NONE
+    private Integer myProgress; // 0~100, 미수강시 null
 }

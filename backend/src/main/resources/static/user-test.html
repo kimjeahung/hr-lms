@@ -105,6 +105,22 @@
   </div>
 
   <!-- 탭 2: 수강 관리 -->
+
+  <div class="card">
+    <h2>🏅 이수증(수료증) 테스트</h2>
+    <div class="info-box">
+      <strong>기능:</strong> 내 이수증(수료증) 목록 조회 및 PDF 다운로드<br>
+      <strong>API:</strong> /api/user/certificates, /api/user/certificates/{certificateId}
+    </div>
+    <div class="row" style="gap: 6px;">
+      <button onclick="getMyCertificates()">내 이수증 목록 GET</button>
+      <input id="cert-id" placeholder="certificateId" style="width:120px;">
+      <button onclick="getCertificateDetail()">이수증 상세 GET</button>
+      <button onclick="downloadCertificatePdf()">PDF 다운로드</button>
+    </div>
+    <div id="res-certificates" class="result">결과가 여기 표시됩니다.</div>
+  </div>
+    
   <div id="panel-enroll" class="panel">
     <div class="card">
       <h2>📝 수강 신청 & 기본 관리</h2>
@@ -392,7 +408,61 @@
 
   // ===== 캘린더 =====
   function getEnrollmentCalendar() {
-    call("GET", "/api/user/calendar", null, "res-calendar");
+    call("GET", "/api/user/calendar/all", null, "res-calendar");
+  }
+
+  // ===== 이수증(수료증) =====
+  function getMyCertificates() {
+    call("GET", "/api/user/certificates", null, "res-certificates");
+  }
+
+  function getCertificateDetail() {
+    const certificateId = $("cert-id").value.trim();
+    if (!certificateId) {
+      $("res-certificates").className = "result error";
+      $("res-certificates").textContent = "❌ certificateId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/certificates/" + certificateId, null, "res-certificates");
+  }
+
+  async function downloadCertificatePdf() {
+    const certificateId = $("cert-id").value.trim();
+    if (!certificateId) {
+      $("res-certificates").className = "result error";
+      $("res-certificates").textContent = "❌ certificateId를 입력하세요";
+      return;
+    }
+
+    try {
+      const headers = {};
+      if (TOKEN) headers.Authorization = "Bearer " + TOKEN;
+      const res = await fetch(base() + "/api/user/certificates/" + certificateId + "/download", {
+        method: "GET",
+        headers: headers
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error("다운로드 실패: " + res.status + " " + text);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "certificate_" + certificateId + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      $("res-certificates").className = "result";
+      $("res-certificates").textContent = "✅ PDF 다운로드 완료";
+    } catch (e) {
+      $("res-certificates").className = "result error";
+      $("res-certificates").textContent = "❌ 에러: " + e.message;
+    }
   }
 
   // ===== Q&A =====

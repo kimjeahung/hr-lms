@@ -3,6 +3,8 @@ package com.hr.backend.domain.enrollment.service;
 import com.hr.backend.domain.enrollment.dto.EnrollmentCalendarResponse;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
+import com.hr.backend.domain.course.entity.CourseRound;
+import com.hr.backend.domain.course.repository.CourseRoundRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,26 +18,26 @@ import java.util.stream.Collectors;
 public class EnrollmentCalendarService {
     
     private final EnrollmentRepository enrollmentRepository;
+    private final CourseRoundRepository courseRoundRepository;
 
     /**
-     * 사용자의 전체 수강 일정 조회
-     * 모든 상태의 수강 정보 반환 (끝난 것, 진행중, 예정)
+     * 전체 강의 일정 + 내 수강상태 포함 반환
      */
-    public List<EnrollmentCalendarResponse> getUserEnrollmentCalendar(Long userId) {
-        List<Enrollment> enrollments = enrollmentRepository.findAllByUserId(userId);
-        
-        return enrollments.stream()
-                .map(enrollment -> EnrollmentCalendarResponse.builder()
-                        .enrollmentId(enrollment.getEnrollmentId())
-                        .courseId(enrollment.getRound().getCourse().getCourseId())
-                        .courseTitle(enrollment.getRound().getCourse().getTitle())
-                        .category(enrollment.getRound().getCourse().getCategory())
-                        .startDate(enrollment.getRound().getStartDate())
-                        .endDate(enrollment.getRound().getEndDate())
-                        .status(enrollment.getStatus().name())
-                        .progress(enrollment.getProgress())
-                        .build()
-                )
-                .collect(Collectors.toList());
+    public List<EnrollmentCalendarResponse> getAllRoundsWithMyStatus(Long userId) {
+        List<CourseRound> rounds = courseRoundRepository.findAll();
+        return rounds.stream().map(round -> {
+            Enrollment enrollment = enrollmentRepository.findByUser_UserIdAndRound_RoundId(userId, round.getRoundId()).orElse(null);
+            return EnrollmentCalendarResponse.builder()
+                    .roundId(round.getRoundId())
+                    .courseId(round.getCourse().getCourseId())
+                    .courseTitle(round.getCourse().getTitle())
+                    .category(round.getCourse().getCategory())
+                    .startDate(round.getStartDate())
+                    .endDate(round.getEndDate())
+                    .enrollmentId(enrollment != null ? enrollment.getEnrollmentId() : null)
+                    .myStatus(enrollment != null ? enrollment.getStatus().name() : "NONE")
+                    .myProgress(enrollment != null ? enrollment.getProgress() : null)
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

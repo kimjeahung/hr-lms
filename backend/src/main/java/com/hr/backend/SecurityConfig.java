@@ -3,6 +3,7 @@ package com.hr.backend;
 import com.hr.backend.security.jwt.JwtFilter;
 import com.hr.backend.security.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -24,6 +26,10 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+
+    /** 허용할 CORS Origin 목록 (콤마 구분). 예: http://localhost:3000,https://your-domain.com */
+    @Value("${cors.allowed-origins:http://localhost:3000}")
+    private String allowedOriginsRaw;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -37,9 +43,14 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health", "/admin-test.html", "/", "/*.html").permitAll()
+                .requestMatchers("/health").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/admin-test.html",
+                        "/admin2-test.html",
+                        "/user-test.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // CORS preflight
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/certificate/generate", "/api/certificate/fail").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/user/courses").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/auth/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -56,7 +67,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*"));          // JWT Bearer 토큰 방식이므로 credentials 불필요
+        List<String> origins = Arrays.stream(allowedOriginsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
 

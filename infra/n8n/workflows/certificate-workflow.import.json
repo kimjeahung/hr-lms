@@ -55,6 +55,15 @@
       "parameters": {
         "method": "POST",
         "url": "http://backend:8080/api/certificate/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $env.CERTIFICATE_INTERNAL_API_TOKEN }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "jsonBody": "={\n  \"userId\": $json.userId,\n  \"courseId\": $json.courseId\n}",
@@ -102,6 +111,15 @@
       "parameters": {
         "method": "POST",
         "url": "http://backend:8080/api/certificate/fail",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Token",
+              "value": "={{ $env.CERTIFICATE_INTERNAL_API_TOKEN }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "json",
         "jsonBody": "={\n  \"userId\": $json.userId || $item(0).$node[\"Webhook In\"].json.userId,\n  \"reason\": $json.message || \"n8n generate 단계 실패\"\n}",

@@ -55,9 +55,6 @@ public class CertificateWorkflowService {
     private String issuerName;
 
     public void triggerCompletionWorkflow(Enrollment enrollment) {
-        if (!triggerEnabled || n8nWebhookUrl == null || n8nWebhookUrl.isBlank()) {
-            return;
-        }
         if (enrollment.getStatus() != Enrollment.Status.DONE) {
             return;
         }
@@ -67,20 +64,84 @@ public class CertificateWorkflowService {
             return;
         }
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("requestId", UUID.randomUUID().toString());
-        payload.put("userId", enrollment.getUser().getUserId());
-        payload.put("courseId", enrollment.getRound().getCourse().getCourseId());
-        payload.put("roundId", enrollment.getRound().getRoundId());
-        payload.put("enrollmentId", enrollment.getEnrollmentId());
+        // n8n 웹훅이 설정되어 있으면 n8n 워크플로우 트리거 (n8n이 callback으로 /api/certificate/generate 호출)
+        if (triggerEnabled && n8nWebhookUrl != null && !n8nWebhookUrl.isBlank()) {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("requestId", UUID.randomUUID().toString());
+            payload.put("userId", enrollment.getUser().getUserId());
+            payload.put("courseId", enrollment.getRound().getCourse().getCourseId());
+            payload.put("roundId", enrollment.getRound().getRoundId());
+            payload.put("enrollmentId", enrollment.getEnrollmentId());
 
-        restClient.post()
-                .uri(n8nWebhookUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload)
-                .retrieve()
-                .toBodilessEntity();
+            restClient.post()
+                    .uri(n8nWebhookUrl)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toBodilessEntity();
+        } else {
+            // n8n 미설정 환경(로컬 개발 등): 해당 수강 차수 기준으로 PDF 직접 생성 fallback
+            generateCertificateForRound(enrollment.getUser().getUserId(), enrollment.getRound().getRoundId());
+        }
     }
+
+        @Transactional
+        public CertificateGenerateResponse generateCertificateForRound(Long userId, Long roundId) {
+        if (userId == null || roundId == null) {
+            throw new IllegalArgumentException("userId와 roundId는 필수입니다.");
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        CourseRound round = courseRoundRepository.findById(roundId)
+            .orElseThrow(() -> new IllegalArgumentException("차수를 찾을 수 없습니다."));
+
+        Certificate existing = certificateRepository
+            .findByUser_UserIdAndRound_RoundId(userId, roundId)
+            .orElse(null);
+        if (existing != null) {
+            return CertificateGenerateResponse.builder()
+                .success(true)
+                .certificateId(existing.getCertificateId())
+                .pdfPath(existing.getFileUrl())
+                .certificateNo(buildCertificateNo(existing))
+                .message("이미 발급된 이수증입니다.")
+                .build();
+        }
+
+        Certificate saved = certificateRepository.save(
+            Certificate.builder().user(user).round(round).fileUrl("").build());
+
+        String certNo = buildCertificateNo(saved);
+        String currentYear = String.valueOf(Year.now().getValue());
+
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("certificateNo", certNo);
+        vars.put("userName", user.getName());
+        vars.put("department", resolveDepartmentName(user));
+        vars.put("courseTitle", round.getCourse().getTitle());
+        vars.put("startDate", round.getStartDate().format(DATE_FORMAT));
+        vars.put("endDate", round.getEndDate().format(DATE_FORMAT));
+        vars.put("trainingHours", resolveTrainingHours(round));
+        vars.put("issuedAt", saved.getIssuedAt().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")));
+        vars.put("issuerName", issuerName);
+
+        String fileName = "cert_" + saved.getCertificateId() + ".pdf";
+        certificatePdfService.generatePdf(vars, fileName, currentYear);
+
+        String storedPath = "/certificates/" + currentYear + "/" + fileName;
+        saved.updateFileUrl(storedPath);
+        certificateRepository.save(saved);
+
+        return CertificateGenerateResponse.builder()
+            .success(true)
+            .certificateId(saved.getCertificateId())
+            .pdfPath(storedPath)
+            .certificateNo(certNo)
+            .message("이수증이 생성되었습니다.")
+            .build();
+        }
 
     @Transactional
     public CertificateGenerateResponse generateCertificate(CertificateGenerateRequest request) {
@@ -98,56 +159,7 @@ public class CertificateWorkflowService {
 
         CourseRound round = rounds.get(rounds.size() - 1);
 
-        // 이미 발급된 이수증이면 재발급 없이 기존 정보 반환
-        Certificate existing = certificateRepository
-                .findByUser_UserIdAndRound_RoundId(user.getUserId(), round.getRoundId())
-                .orElse(null);
-        if (existing != null) {
-            return CertificateGenerateResponse.builder()
-                    .success(true)
-                    .certificateId(existing.getCertificateId())
-                    .pdfPath(existing.getFileUrl())
-                    .certificateNo(buildCertificateNo(existing))
-                    .message("이미 발급된 이수증입니다.")
-                    .build();
-        }
-
-        // 1. 먼저 DB 저장해 certificateId 확보 (fileUrl은 이후 업데이트)
-        Certificate saved = certificateRepository.save(
-                Certificate.builder().user(user).round(round).fileUrl("").build());
-
-        // 2. 이수증 번호 조합
-        String certNo = buildCertificateNo(saved);
-
-        // 3. 템플릿 변수 구성
-        String currentYear = String.valueOf(Year.now().getValue());
-        Map<String, Object> vars = new HashMap<>();
-        vars.put("certificateNo", certNo);
-        vars.put("userName", user.getName());
-        vars.put("department", resolveDepartmentName(user));
-        vars.put("courseTitle", round.getCourse().getTitle());
-        vars.put("startDate", round.getStartDate().format(DATE_FORMAT));
-        vars.put("endDate", round.getEndDate().format(DATE_FORMAT));
-        vars.put("trainingHours", resolveTrainingHours(round));
-        vars.put("issuedAt", saved.getIssuedAt().format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일")));
-        vars.put("issuerName", issuerName);
-
-        // 4. PDF 생성
-        String fileName = "cert_" + saved.getCertificateId() + ".pdf";
-        Path pdfPath = certificatePdfService.generatePdf(vars, fileName, currentYear);
-
-        // 5. 저장 경로 업데이트
-        String storedPath = "/certificates/" + currentYear + "/" + fileName;
-        saved.updateFileUrl(storedPath);
-        certificateRepository.save(saved);
-
-        return CertificateGenerateResponse.builder()
-                .success(true)
-                .certificateId(saved.getCertificateId())
-                .pdfPath(storedPath)
-                .certificateNo(certNo)
-                .message("이수증이 생성되었습니다.")
-                .build();
+        return generateCertificateForRound(user.getUserId(), round.getRoundId());
     }
 
     public CertificateActionResponse handleFailure(CertificateFailRequest request) {

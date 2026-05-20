@@ -21,6 +21,10 @@ public class AuthService {
         User user = userRepository.findByEmployeeNo(req.getEmployeeNo())
                 .orElseThrow(() -> new IllegalArgumentException("사원번호 또는 비밀번호가 올바르지 않습니다."));
 
+        if (!user.isActive()) {
+            throw new IllegalArgumentException("사원번호 또는 비밀번호가 올바르지 않습니다.");
+        }
+
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("사원번호 또는 비밀번호가 올바르지 않습니다.");
         }

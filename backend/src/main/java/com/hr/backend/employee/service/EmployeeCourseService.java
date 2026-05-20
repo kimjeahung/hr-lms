@@ -82,7 +82,10 @@ public class EmployeeCourseService {
         if (enrollmentRepository.existsByUser_UserIdAndRound_RoundId(user.getUserId(), round.getRoundId())) {
             throw new AlreadyExistsException("이미 수강 신청한 강좌입니다.");
         }
-        enrollmentRepository.save(Enrollment.builder().user(user).round(round).build());
+        Enrollment enrollment = Enrollment.builder().user(user).round(round).build();
+        enrollment.approve();  // 자체 신청 즉시 승인 처리 (이수증 발급 조건 충족을 위해)
+        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
+        enrollmentRepository.save(enrollment);
     }
 
     private CourseResponse.CourseListItem toListItem(Course c, User user) {
