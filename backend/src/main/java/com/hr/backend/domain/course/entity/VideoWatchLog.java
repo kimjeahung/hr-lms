@@ -64,8 +64,8 @@ public class VideoWatchLog {
 
     public void endSession(int watchedSec) {
         this.sessionEndedAt = LocalDateTime.now();
-        this.watchedSec     = watchedSec;
-        if (watchedSec >= video.getDurationSec()) {
+        this.watchedSec     = Math.max(this.watchedSec, watchedSec);
+        if (this.watchedSec >= video.getDurationSec()) {
             this.completed = true;
         }
     }

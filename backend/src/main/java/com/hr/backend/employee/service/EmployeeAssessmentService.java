@@ -54,7 +54,7 @@ public class EmployeeAssessmentService {
         Exam exam = examRepository.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam", "examId", examId));
         int score = calculateScore(exam.getQuestions(), request.getAnswers());
         Attempt attempt = attemptRepository.save(Attempt.builder().user(user).exam(exam).score(score).passScore(exam.getPassScore()).build());
-        completionService.recalculateEnrollmentProgress(user, exam.getCourse());
+        if (attempt.isPassed()) completionService.recalculateEnrollmentProgress(user, exam.getCourse());
         return toAttemptResponse("EXAM", examId, attempt);
     }
 

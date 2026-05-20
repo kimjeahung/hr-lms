@@ -7,6 +7,7 @@ import com.hr.backend.domain.course.repository.LectureRepository;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
 import com.hr.backend.domain.enrollment.service.CertificateWorkflowService;
+import com.hr.backend.domain.enrollment.service.EnrollmentService;
 import com.hr.backend.domain.quiz.dto.AttemptRequest;
 import com.hr.backend.domain.quiz.dto.AttemptResponse;
 import com.hr.backend.domain.quiz.entity.Attempt;
@@ -19,12 +20,14 @@ import com.hr.backend.domain.quiz.repository.QuizRepository;
 import com.hr.backend.domain.user.entity.User;
 import com.hr.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,6 +41,7 @@ public class AttemptService {
     private final LectureProgressRepository lectureProgressRepository;
     private final EnrollmentRepository     enrollmentRepository;
     private final CertificateWorkflowService certificateWorkflowService;
+    private final EnrollmentService        enrollmentService;
 
     // ──────────────────────────────────────────────────────────
     // 퀴즈 응시
@@ -163,9 +167,16 @@ public class AttemptService {
                 .filter(e -> e.getRound().getCourse().getCourseId().equals(courseId)
                         && e.getStatus() == Enrollment.Status.IN_PROGRESS)
                 .forEach(enrollment -> {
-                    enrollment.updateProgress(100);  // DONE + completedAt 처리
-                    enrollmentRepository.save(enrollment);
-                    certificateWorkflowService.triggerCompletionWorkflow(enrollment);
+                    try {
+                        enrollmentService.completeEnrollment(enrollment.getEnrollmentId());
+                        Enrollment completed = enrollmentRepository.findById(enrollment.getEnrollmentId())
+                                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+                        certificateWorkflowService.triggerCompletionWorkflow(completed);
+                    } catch (IllegalArgumentException ex) {
+                        // 시험은 통과했지만 나머지 완료 조건(진도/퀴즈)을 충족하지 못한 경우
+                        log.debug("수강 완료 조건 미충족으로 DONE 처리 생략 - enrollmentId={} reason={}",
+                                enrollment.getEnrollmentId(), ex.getMessage());
+                    }
                 });
     }
 

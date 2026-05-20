@@ -4,10 +4,9 @@ import com.hr.backend.domain.course.entity.Course;
 import com.hr.backend.domain.course.entity.Lecture;
 import com.hr.backend.domain.course.entity.LectureProgress;
 import com.hr.backend.domain.course.repository.LectureProgressRepository;
-import com.hr.backend.domain.enrollment.entity.Certificate;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
-import com.hr.backend.domain.enrollment.repository.CertificateRepository;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
+import com.hr.backend.domain.enrollment.service.CertificateWorkflowService;
 import com.hr.backend.domain.quiz.repository.AttemptRepository;
 // import com.hr.backend.domain.survey.repository.SurveyRepository;
 // import com.hr.backend.domain.survey.repository.SurveyResponseRepository;
@@ -22,14 +21,12 @@ public class EmployeeLearningCompletionService {
     private final LectureProgressRepository lectureProgressRepository;
     private final AttemptRepository attemptRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final CertificateRepository certificateRepository;
+    private final CertificateWorkflowService certificateWorkflowService;
     // private final SurveyRepository surveyRepository;
     // private final SurveyResponseRepository surveyResponseRepository;
 
     @Transactional
     public void completeLectureIfReady(User user, Lecture lecture) {
-        boolean allVideosCompleted = lecture.getVideos().isEmpty();
-        // 영상 시청 완료 여부는 EmployeeVideoService에서 직접 완료 처리 후 호출하는 흐름도 허용
         boolean quizPassed = attemptRepository.existsByUser_UserIdAndQuiz_Lecture_LectureIdAndPassedTrue(user.getUserId(), lecture.getLectureId())
                 || lecture.getVideos().isEmpty();
         if (quizPassed || lecture.getVideos().isEmpty()) {
@@ -53,9 +50,8 @@ public class EmployeeLearningCompletionService {
                     e.updateProgress(progress);
                     if (canIssueCertificate(user, e)) {
                         e.updateProgress(100);
-                        if (!certificateRepository.existsByUser_UserIdAndRound_RoundId(user.getUserId(), e.getRound().getRoundId())) {
-                            certificateRepository.save(Certificate.builder().user(user).round(e.getRound()).fileUrl(null).build());
-                        }
+                        // CertificateWorkflowService를 통해 이수증 발급 (n8n 연동 or 직접 PDF 생성)
+                        certificateWorkflowService.triggerCompletionWorkflow(e);
                     }
                 });
     }
