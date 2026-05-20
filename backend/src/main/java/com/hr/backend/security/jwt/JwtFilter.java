@@ -27,16 +27,14 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
 
         String header = req.getHeader("Authorization");
-        log.info("[JwtFilter] {} {} | Authorization: {}",
-                req.getMethod(), req.getRequestURI(),
-                header != null ? (header.length() > 30 ? header.substring(0, 30) + "..." : header) : "없음");
+        log.debug("[JwtFilter] {} {}", req.getMethod(), req.getRequestURI());
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             if (jwtProvider.isValid(token)) {
                 Claims claims = jwtProvider.parse(token);
                 String role   = claims.get("role", String.class);
-                log.info("[JwtFilter] 토큰 유효 | subject={} role={}", claims.getSubject(), role);
+                log.debug("[JwtFilter] 토큰 유효 | subject={} role={}", claims.getSubject(), role);
                 // role 이 이미 "ROLE_ADMIN" / "ROLE_USER" 형태로 저장되어 있음
                 var auth = new UsernamePasswordAuthenticationToken(
                         claims.getSubject(), null,

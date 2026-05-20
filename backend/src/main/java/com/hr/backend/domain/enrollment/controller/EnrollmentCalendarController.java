@@ -20,14 +20,15 @@ public class EnrollmentCalendarController {
     private final EnrollmentCalendarService calendarService;
     private final UserRepository userRepository;
 
+
     /**
-     * 전체 강의 일정 조회
-     * 끝난 강의 / 진행중 / 예정인 강의
+     * 전체 강의 일정 + 내 수강상태 포함
+     * 하위호환을 위해 /api/user/calendar 와 /api/user/calendar/all 모두 지원
      */
-    @GetMapping
-    public ResponseEntity<List<EnrollmentCalendarResponse>> getEnrollmentCalendar() {
+    @GetMapping({"", "/all"})
+    public ResponseEntity<List<EnrollmentCalendarResponse>> getAllRoundsWithMyStatus() {
         Long userId = getLoginUserId();
-        return ResponseEntity.ok(calendarService.getUserEnrollmentCalendar(userId));
+        return ResponseEntity.ok(calendarService.getAllRoundsWithMyStatus(userId));
     }
 
     private Long getLoginUserId() {

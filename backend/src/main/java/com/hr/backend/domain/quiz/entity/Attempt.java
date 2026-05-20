@@ -36,6 +36,9 @@ public class Attempt {
     @Column(nullable = false)
     private int score = 0;
 
+    @Column(name = "pass_score", nullable = false)
+    private int passScore = 0;
+
     @Column(name = "is_passed", nullable = false)
     private boolean passed = false;
 
@@ -49,10 +52,11 @@ public class Attempt {
 
     @Builder
     public Attempt(User user, Quiz quiz, Exam exam, int score, int passScore) {
-        this.user   = user;
-        this.quiz   = quiz;
-        this.exam   = exam;
-        this.score  = score;
-        this.passed = score >= passScore;
+        this.user      = user;
+        this.quiz      = quiz;
+        this.exam      = exam;
+        this.score     = score;
+        this.passScore = passScore;
+        this.passed    = score >= passScore;
     }
 }

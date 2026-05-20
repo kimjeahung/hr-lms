@@ -2,9 +2,14 @@ package com.hr.backend.domain.enrollment.service;
 
 import com.hr.backend.admin.dto.EnrollmentResponse;
 import com.hr.backend.domain.course.entity.CourseRound;
+import com.hr.backend.domain.course.entity.Lecture;
 import com.hr.backend.domain.course.repository.CourseRoundRepository;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
+import com.hr.backend.domain.enrollment.service.CertificateWorkflowService;
+import com.hr.backend.domain.quiz.repository.AttemptRepository;
+import com.hr.backend.domain.quiz.repository.ExamRepository;
+import com.hr.backend.domain.quiz.repository.QuizRepository;
 import com.hr.backend.domain.user.entity.User;
 import com.hr.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +30,10 @@ public class EnrollmentService {
     private final EnrollmentRepository  enrollmentRepository;
     private final UserRepository        userRepository;
     private final CourseRoundRepository courseRoundRepository;
+    private final AttemptRepository     attemptRepository;
+    private final ExamRepository        examRepository;
+    private final QuizRepository        quizRepository;
+    private final CertificateWorkflowService certificateWorkflowService;
 
     /** 전체 이수 현황 조회 (관리자용) */
     public List<EnrollmentResponse> getAll() {
@@ -33,6 +42,17 @@ public class EnrollmentService {
                 .toList();
     }
 
+    
+    /**
+     * 수강신청 취소 (상태를 NOT_STARTED로 변경)
+     */
+    @Transactional
+    public void cancelEnrollment(Long enrollmentId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        enrollment.changeStatus(Enrollment.Status.NOT_STARTED);
+        enrollment.updateProgress(0);
+    }
     /**
      * 필터 조건에 따른 이수 현황 조회
      *
@@ -119,6 +139,7 @@ public class EnrollmentService {
                 .user(user)
                 .round(round)
                 .build();
+        enrollment.approve();  // 사용자 자체 신청도 즉시 승인 (주석: 승인 절차 없음)
         enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
         return new EnrollmentResponse(enrollmentRepository.save(enrollment));
     }
@@ -126,37 +147,98 @@ public class EnrollmentService {
     /** 진행률 업데이트 */
     @Transactional
     public EnrollmentResponse updateProgress(Long enrollmentId, int progress) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new IllegalArgumentException("수강 정보를 찾을 수 없습니다."));
+        Enrollment enrollment = findEnrollmentOrThrow(enrollmentId);
+        enrollment.updateProgress(progress);
+        return new EnrollmentResponse(enrollment);
+    }
+
+    /** 진행률 업데이트 (소유자/관리자 검증 포함) */
+    @Transactional
+    public EnrollmentResponse updateProgressForActor(Long enrollmentId, int progress, Long actorUserId, boolean actorIsAdmin) {
+        Enrollment enrollment = getAccessibleEnrollment(enrollmentId, actorUserId, actorIsAdmin);
         enrollment.updateProgress(progress);
         return new EnrollmentResponse(enrollment);
     }
 
     /** 수강 상세 조회 */
     public EnrollmentResponse getEnrollmentById(Long enrollmentId) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+        Enrollment enrollment = findEnrollmentOrThrow(enrollmentId);
+        return new EnrollmentResponse(enrollment);
+    }
+
+    /** 수강 상세 조회 (소유자/관리자 검증 포함) */
+    public EnrollmentResponse getEnrollmentByIdForActor(Long enrollmentId, Long actorUserId, boolean actorIsAdmin) {
+        Enrollment enrollment = getAccessibleEnrollment(enrollmentId, actorUserId, actorIsAdmin);
         return new EnrollmentResponse(enrollment);
     }
 
     /** 수강 완료 처리 (조건부) */
     @Transactional
     public EnrollmentResponse completeEnrollment(Long enrollmentId) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+        Enrollment enrollment = findEnrollmentOrThrow(enrollmentId);
+        validateCompletionRequirements(enrollment);
+
+        // 모든 조건을 만족하면 완료 처리
+        enrollment.changeStatus(Enrollment.Status.DONE);
+        enrollment.updateProgress(100);
+        certificateWorkflowService.triggerCompletionWorkflow(enrollment);
+        return new EnrollmentResponse(enrollment);
+    }
+
+    /** 수강 완료 처리 (소유자/관리자 검증 포함) */
+    @Transactional
+    public EnrollmentResponse completeEnrollmentForActor(Long enrollmentId, Long actorUserId, boolean actorIsAdmin) {
+        Enrollment enrollment = getAccessibleEnrollment(enrollmentId, actorUserId, actorIsAdmin);
+        validateCompletionRequirements(enrollment);
+
+        // 모든 조건을 만족하면 완료 처리
+        enrollment.changeStatus(Enrollment.Status.DONE);
+        enrollment.updateProgress(100);
+        certificateWorkflowService.triggerCompletionWorkflow(enrollment);
+        return new EnrollmentResponse(enrollment);
+    }
+
+    /** 수강 상세/변경 API 공통 접근 검증 */
+    public void validateEnrollmentAccess(Long enrollmentId, Long actorUserId, boolean actorIsAdmin) {
+        getAccessibleEnrollment(enrollmentId, actorUserId, actorIsAdmin);
+    }
+
+    private Enrollment findEnrollmentOrThrow(Long enrollmentId) {
+        return enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 수강 내역입니다."));
+    }
+
+    private Enrollment getAccessibleEnrollment(Long enrollmentId, Long actorUserId, boolean actorIsAdmin) {
+        Enrollment enrollment = findEnrollmentOrThrow(enrollmentId);
+        if (!actorIsAdmin && !enrollment.getUser().getUserId().equals(actorUserId)) {
+            throw new IllegalArgumentException("본인 수강 정보만 조회/수정할 수 있습니다.");
+        }
+        return enrollment;
+    }
+
+    private void validateCompletionRequirements(Enrollment enrollment) {
+        Long userId = enrollment.getUser().getUserId();
+        Long courseId = enrollment.getRound().getCourse().getCourseId();
         
         // 조건 1: 진도율 80% 이상 확인
         if (enrollment.getProgress() < 80) {
             throw new IllegalArgumentException("진도율 80% 이상이어야 이수 처리가 가능합니다. 현재 진도율: " + enrollment.getProgress() + "%");
         }
-        
-        // TODO: 조건 2: 시험 합격 여부 확인 (attempts 테이블에서 is_passed = 1)
-        // TODO: 조건 3: 퀴즈 합격 여부 확인 (필수일 경우)
-        
-        // 모든 조건을 만족하면 완료 처리
-        enrollment.changeStatus(Enrollment.Status.DONE);
-        enrollment.updateProgress(100);
-        return new EnrollmentResponse(enrollment);
+
+        // 조건 2: 시험이 존재하면 통과 필수
+        if (examRepository.existsByCourse_CourseId(courseId)
+                && !attemptRepository.existsByUser_UserIdAndExam_Course_CourseIdAndPassedTrue(userId, courseId)) {
+            throw new IllegalArgumentException("최종 시험 합격 후 이수 처리할 수 있습니다.");
+        }
+
+        // 조건 3: 강의별 퀴즈가 존재하면 모두 통과 필수
+        for (Lecture lecture : enrollment.getRound().getCourse().getLectures()) {
+            Long lectureId = lecture.getLectureId();
+            if (quizRepository.existsByLecture_LectureId(lectureId)
+                    && !attemptRepository.existsByUser_UserIdAndQuiz_Lecture_LectureIdAndPassedTrue(userId, lectureId)) {
+                throw new IllegalArgumentException("필수 퀴즈를 모두 합격해야 이수 처리할 수 있습니다.");
+            }
+        }
     }
 
     /** 수강 상태 변경 */
