@@ -7,11 +7,6 @@ pipeline {
         timestamps()
     }
 
-    parameters {
-        booleanParam(name: 'K8S_ENABLED', defaultValue: false, description: 'Deploy to Kubernetes instead of Docker Compose')
-        string(name: 'K8S_NAMESPACE', defaultValue: 'hr-lms', description: 'Kubernetes namespace for deployment')
-    }
-
     environment {
         SLACK_NOTIFICATION_CHANNEL = '#jenkins-알림'
     }
@@ -74,93 +69,12 @@ pipeline {
         }
 
         stage('Docker Deploy') {
-            when {
-                expression { return !params.K8S_ENABLED }
-            }
             steps {
-                sh 'docker compose --env-file .env up -d --build --force-recreate ai backend frontend'
-            }
-        }
-
-        stage('Kubernetes Manifest Validate') {
-            when {
-                expression { return params.K8S_ENABLED }
-            }
-            steps {
-                sh '''
-                    set -eu
-                    kubectl version --client
-                    kubectl kustomize infra/k8s >/dev/null
-                '''
-            }
-        }
-
-        stage('Kubernetes Deploy') {
-            when {
-                expression { return params.K8S_ENABLED }
-            }
-            steps {
-                sh '''
-                    set -eu
-                    kubectl version --client
-                    kubectl cluster-info
-
-                    K8S_NAMESPACE="${K8S_NAMESPACE:-hr-lms}"
-                    IMAGE_TAG="${BUILD_NUMBER}"
-
-                    AI_IMAGE="hr-lms-ai:${IMAGE_TAG}"
-                    BACKEND_IMAGE="hr-lms-backend:${IMAGE_TAG}"
-                    FRONTEND_IMAGE="hr-lms-frontend:${IMAGE_TAG}"
-
-                    # Build local images for a local cluster (e.g. Docker Desktop Kubernetes).
-                    docker build -t "$AI_IMAGE" -t hr-lms-ai:local ./ai
-                    docker build -t "$BACKEND_IMAGE" -t hr-lms-backend:local ./backend
-
-                    NEXT_PUBLIC_API_URL=$(awk -F= '/^NEXT_PUBLIC_API_URL=/{print $2}' .env | tr -d '\r')
-                    [ -n "$NEXT_PUBLIC_API_URL" ] || NEXT_PUBLIC_API_URL="http://192.168.2.46:30085"
-                    docker build -t "$FRONTEND_IMAGE" -t hr-lms-frontend:local --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" ./frontend
-
-                    SPRING_DATASOURCE_URL=$(awk -F= '/^SPRING_DATASOURCE_URL=/{print $2}' .env | tr -d '\r')
-                    SPRING_DATASOURCE_USERNAME=$(awk -F= '/^SPRING_DATASOURCE_USERNAME=/{print $2}' .env | tr -d '\r')
-                    SPRING_DATASOURCE_PASSWORD=$(awk -F= '/^SPRING_DATASOURCE_PASSWORD=/{print $2}' .env | tr -d '\r')
-                    AI_SERVER_URL=$(awk -F= '/^AI_SERVER_URL=/{print $2}' .env | tr -d '\r')
-
-                    [ -n "$SPRING_DATASOURCE_URL" ] || { echo "SPRING_DATASOURCE_URL is required"; exit 1; }
-                    [ -n "$SPRING_DATASOURCE_USERNAME" ] || { echo "SPRING_DATASOURCE_USERNAME is required"; exit 1; }
-                    [ -n "$SPRING_DATASOURCE_PASSWORD" ] || { echo "SPRING_DATASOURCE_PASSWORD is required"; exit 1; }
-                    [ -n "$AI_SERVER_URL" ] || AI_SERVER_URL="http://ai:5000"
-
-                                        kubectl apply -f infra/k8s/namespace.yaml
-                    kubectl -n "$K8S_NAMESPACE" create configmap hr-lms-config \
-                      --from-literal=NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
-                      --from-literal=SPRING_DATASOURCE_URL="$SPRING_DATASOURCE_URL" \
-                      --from-literal=AI_SERVER_URL="$AI_SERVER_URL" \
-                      --dry-run=client -o yaml | kubectl apply -f -
-
-                    kubectl -n "$K8S_NAMESPACE" create secret generic hr-lms-secret \
-                      --from-literal=SPRING_DATASOURCE_USERNAME="$SPRING_DATASOURCE_USERNAME" \
-                      --from-literal=SPRING_DATASOURCE_PASSWORD="$SPRING_DATASOURCE_PASSWORD" \
-                      --dry-run=client -o yaml | kubectl apply -f -
-
-                    kubectl apply -f infra/k8s/ai.yaml
-                    kubectl apply -f infra/k8s/backend.yaml
-                    kubectl apply -f infra/k8s/frontend.yaml
-
-                    kubectl -n "$K8S_NAMESPACE" set image deployment/ai ai="$AI_IMAGE"
-                    kubectl -n "$K8S_NAMESPACE" set image deployment/backend backend="$BACKEND_IMAGE"
-                    kubectl -n "$K8S_NAMESPACE" set image deployment/frontend frontend="$FRONTEND_IMAGE"
-
-                    kubectl -n "$K8S_NAMESPACE" rollout status deploy/ai --timeout=180s
-                    kubectl -n "$K8S_NAMESPACE" rollout status deploy/backend --timeout=240s
-                    kubectl -n "$K8S_NAMESPACE" rollout status deploy/frontend --timeout=240s
-                '''
+                sh 'docker compose --env-file .env up -d --build --force-recreate ai backend frontend dozzle'
             }
         }
 
         stage('Post-Deploy Health Check') {
-            when {
-                expression { return !params.K8S_ENABLED }
-            }
             steps {
                 sh '''
                     sed -i 's/\r$//' .env
@@ -189,20 +103,6 @@ pipeline {
                                         curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${AI_PORT}/health"
                                         curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:${BACKEND_PORT}/health"
                                         curl --fail --retry 12 --retry-delay 5 --retry-all-errors -o /dev/null "http://host.docker.internal:${FRONTEND_PORT}/"
-                '''
-            }
-        }
-
-        stage('K8s Post-Deploy Health Check') {
-            when {
-                expression { return params.K8S_ENABLED }
-            }
-            steps {
-                sh '''
-                    K8S_NAMESPACE="${K8S_NAMESPACE:-hr-lms}"
-                    kubectl -n "$K8S_NAMESPACE" get pods -o wide
-                    curl --fail --retry 12 --retry-delay 5 --retry-all-errors "http://host.docker.internal:30085/health"
-                    curl --fail --retry 12 --retry-delay 5 --retry-all-errors -o /dev/null "http://host.docker.internal:30005/"
                 '''
             }
         }

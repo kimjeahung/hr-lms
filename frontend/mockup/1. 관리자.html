@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS - 관리자(어드민) 화면</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #f5f5f3;
+      color: #1a1a1a;
+      font-size: 14px;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 6px;
+      padding: 14px 20px 0;
+      background: #1a1a2e;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 9px 20px;
+      font-size: 13px;
+      border: 1px solid transparent;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.5);
+      font-family: inherit;
+      white-space: nowrap;
+      border-bottom: none;
+    }
+
+    .tab-btn.active {
+      background: #f5f5f3;
+      color: #1a1a2e;
+      font-weight: 700;
+      border-color: rgba(255, 255, 255, 0.2);
+      border-bottom-color: #f5f5f3;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* NAV */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 28px;
+      background: #1a1a2e;
+    }
+
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .nav-logo span {
+      color: #4A90D9;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav-link {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+      cursor: pointer;
+    }
+
+    .nav-link.active {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-user {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #E24B4A;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* LOGIN */
+    .login-wrap {
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      padding: 40px 20px;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-logo {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .login-logo span {
+      color: #4A90D9;
+    }
+
+    .login-company {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .admin-badge {
+      display: inline-block;
+      background: #FCEBEB;
+      color: #A32D2D;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      margin-bottom: 28px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 6px;
+      display: block;
+      font-weight: 700;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      font-family: inherit;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: #4A90D9;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 4px;
+    }
+
+    .login-hint {
+      font-size: 12px;
+      color: #bbb;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    /* DASHBOARD */
+    .dashboard-wrap {
+      padding: 24px 28px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .ad-stat {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .ad-label {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .ad-val {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .ad-sub {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .ad-trend {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .trend-up {
+      color: #3B6D11;
+    }
+
+    .trend-down {
+      color: #A32D2D;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .dashboard-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .admin-card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .dept-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+    }
+
+    .dept-name {
+      font-size: 13px;
+      width: 70px;
+      flex-shrink: 0;
+    }
+
+    .dept-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #f0f0ee;
+      border-radius: 5px;
+    }
+
+    .dept-bar {
+      height: 8px;
+      border-radius: 5px;
+    }
+
+    .dept-pct {
+      font-size: 12px;
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+
+    .emp-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .emp-row:last-child {
+      border-bottom: none;
+    }
+
+    .emp-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .emp-info {
+      flex: 1;
+    }
+
+    .emp-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .emp-dept {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .emp-rate {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .rate-high {
+      color: #3B6D11;
+    }
+
+    .rate-mid {
+      color: #185FA5;
+    }
+
+    .rate-low {
+      color: #A32D2D;
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #FFF8F0;
+      border: 1px solid rgba(239, 159, 39, 0.2);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .alert-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .alert-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #EF9F27;
+      flex-shrink: 0;
+    }
+
+    .alert-txt {
+      font-size: 13px;
+      color: #555;
+      flex: 1;
+    }
+
+    .alert-date {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .notice-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .notice-row:last-child {
+      border-bottom: none;
+    }
+
+    .notice-ttl {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .notice-date {
+      font-size: 11px;
+      color: #999;
+    }
+
+    /* EMPLOYEE MGMT */
+    .emp-mgmt-wrap {
+      padding: 24px 28px;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-input {
+      padding: 9px 14px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      width: 220px;
+    }
+
+    .filter-select {
+      padding: 9px 14px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+
+    .add-btn {
+      padding: 9px 20px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .data-table {
+      width: 100%;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .data-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      padding: 12px 16px;
+      background: #fafaf8;
+      font-size: 12px;
+      font-weight: 700;
+      color: #888;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: #fafaf8;
+    }
+
+    .role-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .role-admin {
+      background: #FCEBEB;
+      color: #A32D2D;
+    }
+
+    .role-office {
+      background: #E6F1FB;
+      color: #185FA5;
+    }
+
+    .role-field {
+      background: #EAF3DE;
+      color: #3B6D11;
+    }
+
+    .status-badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .status-done {
+      background: #EAF3DE;
+      color: #3B6D11;
+    }
+
+    .status-ing {
+      background: #E6F1FB;
+      color: #185FA5;
+    }
+
+    .status-none {
+      background: #f0f0ee;
+      color: #888;
+    }
+
+    .tbl-btn {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* COURSE MGMT */
+    .course-mgmt-wrap {
+      padding: 24px 28px;
+    }
+
+    .course-mgmt-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .mgmt-card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .mgmt-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .mgmt-info {
+      flex: 1;
+    }
+
+    .mgmt-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .mgmt-meta {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .mgmt-stats {
+      display: flex;
+      gap: 14px;
+    }
+
+    .mgmt-stat {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .mgmt-stat strong {
+      font-weight: 700;
+      color: #185FA5;
+    }
+
+    .mgmt-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .mgmt-btn {
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .mgmt-btn.primary {
+      background: #1a1a2e;
+      color: #fff;
+      border-color: #1a1a2e;
+    }
+
+    /* COMPLETION STATUS */
+    .completion-wrap {
+      padding: 24px 28px;
+    }
+
+    .completion-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .comp-filter {
+      padding: 7px 18px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .comp-filter.on {
+      background: #1a1a2e;
+      color: #fff;
+      border-color: #1a1a2e;
+    }
+
+    .export-btn {
+      margin-left: auto;
+      padding: 7px 18px;
+      font-size: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+    }
+
+    /* NOTICE MGMT */
+    .notice-mgmt-wrap {
+      padding: 24px 28px;
+    }
+
+    .notice-list {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .notice-item-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .notice-item-row:last-child {
+      border-bottom: none;
+    }
+
+    .notice-num {
+      font-size: 12px;
+      color: #888;
+      width: 30px;
+      flex-shrink: 0;
+    }
+
+    .notice-content {
+      flex: 1;
+    }
+
+    .notice-title-txt {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .notice-info {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .notice-actions {
+      display: flex;
+      gap: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('login', this)">🔐 관리자 로그인</button>
+    <button class="tab-btn" onclick="showTab('dashboard', this)">📊 대시보드</button>
+    <button class="tab-btn" onclick="showTab('employee', this)">👥 직원 관리</button>
+    <button class="tab-btn" onclick="showTab('course', this)">📚 강의 관리</button>
+    <button class="tab-btn" onclick="showTab('completion', this)">✅ 이수 현황</button>
+    <button class="tab-btn" onclick="showTab('notice', this)">📢 공지사항 관리</button>
+  </div>
+
+  <!-- 관리자 로그인 -->
+  <div id="page-login" class="page active">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo"><span>LMS</span> 관리자</div>
+        <div class="login-company">사내 교육 플랫폼 — 어드민</div>
+        <div class="admin-badge">🔑 관리자 전용</div>
+        <label class="form-label">사원번호 (관리자)</label>
+        <input class="form-input" type="text" placeholder="사원번호를 입력하세요" />
+        <label class="form-label">비밀번호</label>
+        <input class="form-input" type="password" placeholder="비밀번호를 입력하세요" />
+        <button class="login-btn">관리자 로그인</button>
+        <div class="login-hint">관리자 계정 문의: IT 지원팀 내선 1234</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대시보드 -->
+  <div id="page-dashboard" class="page">
+    <div class="nav">
+      <div class="nav-logo"><span>LMS</span> 관리자</div>
+      <div class="nav-links">
+        <span class="nav-link active">대시보드</span>
+        <span class="nav-link">직원 관리</span>
+        <span class="nav-link">강의 관리</span>
+        <span class="nav-link">이수 현황</span>
+      </div>
+      <div class="nav-right">
+        <span class="nav-user">김인사 팀장</span>
+        <div class="nav-avatar">김</div>
+      </div>
+    </div>
+    <div class="dashboard-wrap">
+      <div class="page-title">전체 현황 대시보드</div>
+      <div class="admin-stats">
+        <div class="ad-stat">
+          <div class="ad-label">전체 임직원</div>
+          <div class="ad-val">247</div>
+          <div class="ad-sub">명 등록</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-label">전체 이수율</div>
+          <div class="ad-val" style="color:#185FA5">68%</div>
+          <div class="ad-sub">올해 기준</div>
+          <div class="ad-trend trend-up">▲ 5% 전월 대비</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-label">미이수자</div>
+          <div class="ad-val" style="color:#A32D2D">79</div>
+          <div class="ad-sub">명</div>
+          <div class="ad-trend trend-down">마감 임박 12명</div>
+        </div>
+        <div class="ad-stat">
+          <div class="ad-label">개설 강의</div>
+          <div class="ad-val">24</div>
+          <div class="ad-sub">개 운영 중</div>
+        </div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="admin-card">
+          <div class="section-title">부서별 이수율</div>
+          <div class="dept-row"><span class="dept-name">인사팀</span>
+            <div class="dept-bar-bg">
+              <div class="dept-bar" style="width:95%;background:#639922"></div>
+            </div><span class="dept-pct" style="color:#3B6D11">95%</span>
+          </div>
+          <div class="dept-row"><span class="dept-name">개발팀</span>
+            <div class="dept-bar-bg">
+              <div class="dept-bar" style="width:82%;background:#185FA5"></div>
+            </div><span class="dept-pct" style="color:#185FA5">82%</span>
+          </div>
+          <div class="dept-row"><span class="dept-name">재무팀</span>
+            <div class="dept-bar-bg">
+              <div class="dept-bar" style="width:78%;background:#185FA5"></div>
+            </div><span class="dept-pct" style="color:#185FA5">78%</span>
+          </div>
+          <div class="dept-row"><span class="dept-name">영업팀</span>
+            <div class="dept-bar-bg">
+              <div class="dept-bar" style="width:71%;background:#EF9F27"></div>
+            </div><span class="dept-pct" style="color:#854F0B">71%</span>
+          </div>
+          <div class="dept-row"><span class="dept-name">생산팀</span>
+            <div class="dept-bar-bg">
+              <div class="dept-bar" style="width:55%;background:#E24B4A"></div>
+            </div><span class="dept-pct" style="color:#A32D2D">55%</span>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="section-title">미이수자 현황 (상위)</div>
+          <div class="emp-row">
+            <div class="emp-avatar" style="background:#FCEBEB;color:#A32D2D">박</div>
+            <div class="emp-info">
+              <div class="emp-name">박민준</div>
+              <div class="emp-dept">생산팀 · 현장직</div>
+            </div><span class="emp-rate rate-low">10%</span>
+          </div>
+          <div class="emp-row">
+            <div class="emp-avatar" style="background:#FCEBEB;color:#A32D2D">김</div>
+            <div class="emp-info">
+              <div class="emp-name">김철수</div>
+              <div class="emp-dept">생산팀 · 현장직</div>
+            </div><span class="emp-rate rate-low">20%</span>
+          </div>
+          <div class="emp-row">
+            <div class="emp-avatar" style="background:#FAEEDA;color:#854F0B">이</div>
+            <div class="emp-info">
+              <div class="emp-name">이영희</div>
+              <div class="emp-dept">영업팀 · 사무직</div>
+            </div><span class="emp-rate rate-mid">45%</span>
+          </div>
+          <div class="emp-row">
+            <div class="emp-avatar" style="background:#FAEEDA;color:#854F0B">최</div>
+            <div class="emp-info">
+              <div class="emp-name">최지현</div>
+              <div class="emp-dept">개발팀 · 사무직</div>
+            </div><span class="emp-rate rate-mid">50%</span>
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-grid" style="margin-top:16px">
+        <div class="admin-card">
+          <div class="section-title">마감 임박 알림</div>
+          <div class="alert-item">
+            <div class="alert-dot" style="background:#E24B4A"></div>
+            <div class="alert-txt">개인정보보호 교육 — 미이수자 34명</div>
+            <div class="alert-date">~5/31</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-dot"></div>
+            <div class="alert-txt">직장 내 괴롭힘 예방 — 미이수자 21명</div>
+            <div class="alert-date">~6/30</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-dot" style="background:#639922"></div>
+            <div class="alert-txt">산업안전보건 교육 — 미이수자 52명</div>
+            <div class="alert-date">~8/31</div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="section-title">최근 공지사항</div>
+          <div class="notice-row"><span class="notice-ttl">2025년 법정의무교육 이수 안내</span><span
+              class="notice-date">04.01</span></div>
+          <div class="notice-row"><span class="notice-ttl">신규 직무교육 강의 오픈 안내</span><span class="notice-date">03.20</span>
+          </div>
+          <div class="notice-row"><span class="notice-ttl">시스템 점검 안내 (4/15)</span><span class="notice-date">03.15</span>
+          </div>
+          <div class="notice-row"><span class="notice-ttl">1분기 교육 이수 결과 보고</span><span class="notice-date">03.01</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 직원 관리 -->
+  <div id="page-employee" class="page">
+    <div class="nav">
+      <div class="nav-logo"><span>LMS</span> 관리자</div>
+      <div class="nav-links"><span class="nav-link">대시보드</span><span class="nav-link active">직원 관리</span><span
+          class="nav-link">강의 관리</span><span class="nav-link">이수 현황</span></div>
+      <div class="nav-right"><span class="nav-user">김인사 팀장</span>
+        <div class="nav-avatar">김</div>
+      </div>
+    </div>
+    <div class="emp-mgmt-wrap">
+      <div class="page-title">직원 관리</div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input class="search-input" placeholder="이름 또는 사원번호 검색..." />
+          <select class="filter-select">
+            <option>전체 부서</option>
+            <option>개발팀</option>
+            <option>영업팀</option>
+            <option>생산팀</option>
+            <option>인사팀</option>
+          </select>
+          <select class="filter-select">
+            <option>전체 직종</option>
+            <option>사무직</option>
+            <option>현장직</option>
+          </select>
+        </div>
+        <button class="add-btn">+ 직원 등록</button>
+      </div>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>사원번호</th>
+              <th>이름</th>
+              <th>부서</th>
+              <th>직종</th>
+              <th>이수율</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>20240123</td>
+              <td><strong>홍길동</strong></td>
+              <td>개발팀</td>
+              <td><span class="role-badge role-office">사무직</span></td>
+              <td><span style="color:#185FA5;font-weight:700">70%</span></td>
+              <td><span class="status-badge status-ing">수강 중</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+            <tr>
+              <td>20230456</td>
+              <td><strong>이영희</strong></td>
+              <td>영업팀</td>
+              <td><span class="role-badge role-office">사무직</span></td>
+              <td><span style="color:#854F0B;font-weight:700">45%</span></td>
+              <td><span class="status-badge status-ing">수강 중</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+            <tr>
+              <td>20220789</td>
+              <td><strong>김철수</strong></td>
+              <td>생산팀</td>
+              <td><span class="role-badge role-field">현장직</span></td>
+              <td><span style="color:#A32D2D;font-weight:700">20%</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+            <tr>
+              <td>20210012</td>
+              <td><strong>박민준</strong></td>
+              <td>생산팀</td>
+              <td><span class="role-badge role-field">현장직</span></td>
+              <td><span style="color:#A32D2D;font-weight:700">10%</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+            <tr>
+              <td>20240567</td>
+              <td><strong>최지현</strong></td>
+              <td>개발팀</td>
+              <td><span class="role-badge role-office">사무직</span></td>
+              <td><span style="color:#854F0B;font-weight:700">50%</span></td>
+              <td><span class="status-badge status-ing">수강 중</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+            <tr>
+              <td>20190034</td>
+              <td><strong>정수연</strong></td>
+              <td>인사팀</td>
+              <td><span class="role-badge role-admin">어드민</span></td>
+              <td><span style="color:#3B6D11;font-weight:700">100%</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td><button class="tbl-btn">상세</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 강의 관리 -->
+  <div id="page-course" class="page">
+    <div class="nav">
+      <div class="nav-logo"><span>LMS</span> 관리자</div>
+      <div class="nav-links"><span class="nav-link">대시보드</span><span class="nav-link">직원 관리</span><span
+          class="nav-link active">강의 관리</span><span class="nav-link">이수 현황</span></div>
+      <div class="nav-right"><span class="nav-user">김인사 팀장</span>
+        <div class="nav-avatar">김</div>
+      </div>
+    </div>
+    <div class="course-mgmt-wrap">
+      <div class="toolbar">
+        <div class="page-title">강의 관리</div>
+        <button class="add-btn">+ 강의 등록</button>
+      </div>
+      <div class="course-mgmt-grid">
+        <div class="mgmt-card">
+          <div class="mgmt-icon" style="background:#FCEBEB">📋</div>
+          <div class="mgmt-info">
+            <div class="mgmt-title">개인정보보호 교육 2025</div>
+            <div class="mgmt-meta">법정의무교육 · 전 직원 필수 · 60분 · 마감 2025.05.31</div>
+            <div class="mgmt-stats">
+              <div class="mgmt-stat">수강자 <strong>213명</strong></div>
+              <div class="mgmt-stat">완료 <strong>179명</strong></div>
+              <div class="mgmt-stat">이수율 <strong>84%</strong></div>
+            </div>
+            <div class="mgmt-actions">
+              <button class="mgmt-btn primary">수정</button>
+              <button class="mgmt-btn">수강자 보기</button>
+              <button class="mgmt-btn">알림 발송</button>
+            </div>
+          </div>
+        </div>
+        <div class="mgmt-card">
+          <div class="mgmt-icon" style="background:#EAF3DE">🛡️</div>
+          <div class="mgmt-info">
+            <div class="mgmt-title">성희롱 예방 교육</div>
+            <div class="mgmt-meta">법정의무교육 · 전 직원 필수 · 60분 · 마감 2025.12.31</div>
+            <div class="mgmt-stats">
+              <div class="mgmt-stat">수강자 <strong>247명</strong></div>
+              <div class="mgmt-stat">완료 <strong>230명</strong></div>
+              <div class="mgmt-stat">이수율 <strong>93%</strong></div>
+            </div>
+            <div class="mgmt-actions">
+              <button class="mgmt-btn primary">수정</button>
+              <button class="mgmt-btn">수강자 보기</button>
+              <button class="mgmt-btn">알림 발송</button>
+            </div>
+          </div>
+        </div>
+        <div class="mgmt-card">
+          <div class="mgmt-icon" style="background:#E6F1FB">💼</div>
+          <div class="mgmt-info">
+            <div class="mgmt-title">비즈니스 문서 작성법</div>
+            <div class="mgmt-meta">직무교육 · 사무직 대상 · 120분</div>
+            <div class="mgmt-stats">
+              <div class="mgmt-stat">수강자 <strong>85명</strong></div>
+              <div class="mgmt-stat">완료 <strong>42명</strong></div>
+              <div class="mgmt-stat">이수율 <strong>49%</strong></div>
+            </div>
+            <div class="mgmt-actions">
+              <button class="mgmt-btn primary">수정</button>
+              <button class="mgmt-btn">수강자 보기</button>
+              <button class="mgmt-btn">알림 발송</button>
+            </div>
+          </div>
+        </div>
+        <div class="mgmt-card">
+          <div class="mgmt-icon" style="background:#f5f0ff">🦺</div>
+          <div class="mgmt-info">
+            <div class="mgmt-title">산업안전보건 교육</div>
+            <div class="mgmt-meta">법정의무교육 · 현장직 필수 · 90분 · 마감 2025.08.31</div>
+            <div class="mgmt-stats">
+              <div class="mgmt-stat">수강자 <strong>120명</strong></div>
+              <div class="mgmt-stat">완료 <strong>68명</strong></div>
+              <div class="mgmt-stat">이수율 <strong>57%</strong></div>
+            </div>
+            <div class="mgmt-actions">
+              <button class="mgmt-btn primary">수정</button>
+              <button class="mgmt-btn">수강자 보기</button>
+              <button class="mgmt-btn">알림 발송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이수 현황 -->
+  <div id="page-completion" class="page">
+    <div class="nav">
+      <div class="nav-logo"><span>LMS</span> 관리자</div>
+      <div class="nav-links"><span class="nav-link">대시보드</span><span class="nav-link">직원 관리</span><span
+          class="nav-link">강의 관리</span><span class="nav-link active">이수 현황</span></div>
+      <div class="nav-right"><span class="nav-user">김인사 팀장</span>
+        <div class="nav-avatar">김</div>
+      </div>
+    </div>
+    <div class="completion-wrap">
+      <div class="page-title">이수 현황</div>
+      <div class="completion-header">
+        <button class="comp-filter on">전체</button>
+        <button class="comp-filter">법정의무교육</button>
+        <button class="comp-filter">직무교육</button>
+        <button class="comp-filter">현장직</button>
+        <button class="comp-filter">사무직</button>
+        <button class="comp-filter">미이수자만</button>
+        <button class="export-btn">📥 Excel 내보내기</button>
+      </div>
+      <div class="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>사원번호</th>
+              <th>이름</th>
+              <th>부서</th>
+              <th>직종</th>
+              <th>개인정보보호</th>
+              <th>성희롱 예방</th>
+              <th>직장내괴롭힘</th>
+              <th>산업안전보건</th>
+              <th>전체 이수율</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>20240123</td>
+              <td><strong>홍길동</strong></td>
+              <td>개발팀</td>
+              <td><span class="role-badge role-office">사무직</span></td>
+              <td><span class="status-badge status-ing">45%</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td><span class="status-badge status-ing">10%</span></td>
+              <td>-</td>
+              <td><strong style="color:#185FA5">70%</strong></td>
+            </tr>
+            <tr>
+              <td>20230456</td>
+              <td><strong>이영희</strong></td>
+              <td>영업팀</td>
+              <td><span class="role-badge role-office">사무직</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td>-</td>
+              <td><strong style="color:#854F0B">45%</strong></td>
+            </tr>
+            <tr>
+              <td>20220789</td>
+              <td><strong>김철수</strong></td>
+              <td>생산팀</td>
+              <td><span class="role-badge role-field">현장직</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><span class="status-badge status-none">미시작</span></td>
+              <td><span class="status-badge status-ing">20%</span></td>
+              <td><strong style="color:#A32D2D">20%</strong></td>
+            </tr>
+            <tr>
+              <td>20190034</td>
+              <td><strong>정수연</strong></td>
+              <td>인사팀</td>
+              <td><span class="role-badge role-admin">어드민</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td><span class="status-badge status-done">완료</span></td>
+              <td>-</td>
+              <td><strong style="color:#3B6D11">100%</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 공지사항 관리 -->
+  <div id="page-notice" class="page">
+    <div class="nav">
+      <div class="nav-logo"><span>LMS</span> 관리자</div>
+      <div class="nav-links"><span class="nav-link">대시보드</span><span class="nav-link">직원 관리</span><span
+          class="nav-link">강의 관리</span><span class="nav-link active">공지 관리</span></div>
+      <div class="nav-right"><span class="nav-user">김인사 팀장</span>
+        <div class="nav-avatar">김</div>
+      </div>
+    </div>
+    <div class="notice-mgmt-wrap">
+      <div class="toolbar">
+        <div class="page-title">공지사항 관리</div>
+        <button class="add-btn">+ 공지 작성</button>
+      </div>
+      <div class="notice-list">
+        <div class="notice-item-row">
+          <span class="notice-num">4</span>
+          <div class="notice-content">
+            <div class="notice-title-txt">2025년 법정의무교육 이수 안내</div>
+            <div class="notice-info">김인사 팀장 · 2025.04.01 · 조회 247</div>
+          </div>
+          <div class="notice-actions">
+            <button class="tbl-btn">수정</button>
+            <button class="tbl-btn" style="color:#A32D2D;border-color:#f0c0c0">삭제</button>
+          </div>
+        </div>
+        <div class="notice-item-row">
+          <span class="notice-num">3</span>
+          <div class="notice-content">
+            <div class="notice-title-txt">신규 직무교육 강의 오픈 안내</div>
+            <div class="notice-info">김인사 팀장 · 2025.03.20 · 조회 183</div>
+          </div>
+          <div class="notice-actions">
+            <button class="tbl-btn">수정</button>
+            <button class="tbl-btn" style="color:#A32D2D;border-color:#f0c0c0">삭제</button>
+          </div>
+        </div>
+        <div class="notice-item-row">
+          <span class="notice-num">2</span>
+          <div class="notice-content">
+            <div class="notice-title-txt">시스템 점검 안내 (4/15 02:00~06:00)</div>
+            <div class="notice-info">김인사 팀장 · 2025.03.15 · 조회 201</div>
+          </div>
+          <div class="notice-actions">
+            <button class="tbl-btn">수정</button>
+            <button class="tbl-btn" style="color:#A32D2D;border-color:#f0c0c0">삭제</button>
+          </div>
+        </div>
+        <div class="notice-item-row">
+          <span class="notice-num">1</span>
+          <div class="notice-content">
+            <div class="notice-title-txt">1분기 교육 이수 결과 보고</div>
+            <div class="notice-info">김인사 팀장 · 2025.03.01 · 조회 95</div>
+          </div>
+          <div class="notice-actions">
+            <button class="tbl-btn">수정</button>
+            <button class="tbl-btn" style="color:#A32D2D;border-color:#f0c0c0">삭제</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showTab(name, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+
+</html>
