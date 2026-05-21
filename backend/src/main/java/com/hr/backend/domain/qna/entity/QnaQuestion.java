@@ -65,4 +65,10 @@ public class QnaQuestion {
         this.resolved  = true;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateContent(String title, String content) {
+        this.title     = title;
+        this.content   = content;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
