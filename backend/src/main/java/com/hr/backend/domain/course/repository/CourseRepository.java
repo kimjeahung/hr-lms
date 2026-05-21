@@ -7,4 +7,7 @@ import java.util.List;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findAllByActiveTrue();
+
+    /** 전체 목록 대신 COUNT만 조회 — DashboardService 최적화 */
+    long countByActiveTrue();
 }

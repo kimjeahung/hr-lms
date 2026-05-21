@@ -2,11 +2,13 @@ package com.hr.backend.domain.enrollment.controller;
 
 import com.hr.backend.admin.dto.EnrollmentResponse;
 import com.hr.backend.domain.enrollment.dto.EnrollmentScheduleResponse;
+import com.hr.backend.domain.enrollment.dto.FeedbackRequest;
+import com.hr.backend.domain.enrollment.dto.FeedbackResponse;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
+import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
 import com.hr.backend.domain.enrollment.service.EnrollmentService;
+import com.hr.backend.domain.enrollment.service.FeedbackService;
 import com.hr.backend.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +23,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EnrollmentUserController {
 
-    private final EnrollmentService enrollmentService;
-    private final EntityManager     entityManager;
-    private final UserRepository    userRepository;
+    private final EnrollmentService      enrollmentService;
+    private final FeedbackService        feedbackService;
+    private final EnrollmentRepository   enrollmentRepository;
+    private final UserRepository         userRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -78,20 +81,19 @@ public class EnrollmentUserController {
         return ResponseEntity.ok(enrollmentService.completeEnrollment(enrollmentId));
     }
 
-    // 수강 피드백 제출 (stub — 추후 구현)
+    // 수강 피드백 제출 (수강 완료 후에만 가능, 기존 제출 시 수정 처리)
     @PostMapping("/{enrollmentId}/feedback")
-    public ResponseEntity<String> submitEnrollmentFeedback(
+    public ResponseEntity<FeedbackResponse> submitEnrollmentFeedback(
             @PathVariable Long enrollmentId,
-            @RequestParam String feedback) {
-        return ResponseEntity.ok("피드백이 제출되었습니다.");
+            @RequestBody FeedbackRequest request) {
+        String employeeNo = getLoginEmployeeNo();
+        return ResponseEntity.ok(feedbackService.submitFeedback(enrollmentId, employeeNo, request));
     }
 
-    // 수강 알림 설정 (stub — 추후 구현)
-    @PostMapping("/{enrollmentId}/notifications")
-    public ResponseEntity<String> setEnrollmentNotifications(
-            @PathVariable Long enrollmentId,
-            @RequestParam boolean enabled) {
-        return ResponseEntity.ok("알림 설정이 변경되었습니다: " + enabled);
+    // 피드백 조회
+    @GetMapping("/{enrollmentId}/feedback")
+    public ResponseEntity<FeedbackResponse> getEnrollmentFeedback(@PathVariable Long enrollmentId) {
+        return ResponseEntity.ok(feedbackService.getFeedback(enrollmentId));
     }
 
     // 수강 캘린더 (기본)
@@ -132,27 +134,21 @@ public class EnrollmentUserController {
     // private
     // ──────────────────────────────────────────────────────────
 
+    /** JWT 토큰에서 인증된 사용자의 employeeNo 추출 */
+    private String getLoginEmployeeNo() {
+        return (String) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+    }
+
     /** JWT 토큰에서 인증된 사용자의 userId 추출 */
     private Long getLoginUserId() {
-        String employeeNo = (String) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return userRepository.findByEmployeeNo(employeeNo)
+        return userRepository.findByEmployeeNo(getLoginEmployeeNo())
                 .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."))
                 .getUserId();
     }
 
     private Enrollment findEnrollmentWithRound(Long enrollmentId) {
-        try {
-            return entityManager.createQuery(
-                            "select e from Enrollment e " +
-                            "join fetch e.user u " +
-                            "join fetch e.round r " +
-                            "join fetch r.course c " +
-                            "where e.enrollmentId = :id", Enrollment.class)
-                    .setParameter("id", enrollmentId)
-                    .getSingleResult();
-        } catch (NoResultException ex) {
-            throw new IllegalArgumentException("수강 정보를 찾을 수 없습니다.");
-        }
+        return enrollmentRepository.findByIdWithRound(enrollmentId)
+                .orElseThrow(() -> new IllegalArgumentException("수강 정보를 찾을 수 없습니다."));
     }
 }
