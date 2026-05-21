@@ -11,5 +11,9 @@ public interface QnaQuestionRepository extends JpaRepository<QnaQuestion, Long> 
 
     List<QnaQuestion> findAllByResolvedFalseOrderByCreatedAtDesc();
 
+    // 과정별 질문 목록 (course 연관관계 기준)
     List<QnaQuestion> findAllByCourse_CourseIdOrderByCreatedAtDesc(Long courseId);
+
+    // 유저별 질문 목록 (user 연관관계 기준)
+    List<QnaQuestion> findAllByUser_UserIdOrderByCreatedAtDesc(Long userId);
 }

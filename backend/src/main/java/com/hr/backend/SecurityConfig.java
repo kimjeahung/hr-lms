@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .requestMatchers("/health", "/admin-test.html", "/", "/*.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // CORS preflight
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/user/courses").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/auth/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // /api/certificate/** 는 anyRequest().authenticated() 로 처리 (일반 유저 접근 허용)
