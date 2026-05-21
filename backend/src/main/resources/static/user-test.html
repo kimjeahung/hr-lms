@@ -66,7 +66,9 @@
   <div class="tabs">
     <button class="tab active" data-panel="panel-course">📚 강좌 조회</button>
     <button class="tab" data-panel="panel-enroll">📝 수강 관리</button>
+    <button class="tab" data-panel="panel-learning">🎥 학습/평가</button>
     <button class="tab" data-panel="panel-calendar">📅 수강 캘린더</button>
+    <button class="tab" data-panel="panel-user">👤 사용자 정보</button>
     <button class="tab" data-panel="panel-qna">❓ Q&A</button>
   </div>
 
@@ -102,25 +104,24 @@
       </div>
       <div id="res-lecture" class="result">결과가 여기 표시됩니다.</div>
     </div>
+
+    <div class="card">
+      <h2>📘 내 강의 조회</h2>
+      <div class="grid">
+        <div><label>page</label><input id="my-course-page" value="0"></div>
+        <div><label>size</label><input id="my-course-size" value="10"></div>
+        <div><label>sort (field,direction)</label><input id="my-course-sort" value="enrolledAt,desc"></div>
+        <div><label>courseId (상세)</label><input id="my-course-id" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getMyCourses()">📚 내 강의 목록 GET</button>
+        <button onclick="getMyCourseDetail()">📖 내 강의 상세 GET</button>
+      </div>
+      <div id="res-my-courses" class="result">결과가 여기 표시됩니다.</div>
+    </div>
   </div>
 
-  <!-- 탭 2: 수강 관리화면 -->
-
-  <div class="card">
-    <h2>🏅 이수증(수료증) 테스트</h2>
-    <div class="info-box">
-      <strong>기능:</strong> 내 이수증(수료증) 목록 조회 및 PDF 다운로드<br>
-      <strong>API:</strong> /api/user/certificates, /api/user/certificates/{certificateId}
-    </div>
-    <div class="row" style="gap: 6px;">
-      <button onclick="getMyCertificates()">내 이수증 목록 GET</button>
-      <input id="cert-id" placeholder="certificateId" style="width:120px;">
-      <button onclick="getCertificateDetail()">이수증 상세 GET</button>
-      <button onclick="downloadCertificatePdf()">PDF 다운로드</button>
-    </div>
-    <div id="res-certificates" class="result">결과가 여기 표시됩니다.</div>
-  </div>
-    
+  <!-- 탭 2: 수강 관리 -->
   <div id="panel-enroll" class="panel">
     <div class="card">
       <h2>📝 수강 신청 & 기본 관리</h2>
@@ -135,6 +136,14 @@
             <div><label>roundId</label><input id="enroll-roundId" value="1"></div>
           </div>
           <button style="width: 100%; margin-top: 8px;" onclick="applyEnrollment()">✅ 수강 신청 POST</button>
+        </div>
+
+        <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+          <h3>▶ 신청 취소</h3>
+          <div class="grid">
+            <div><label>enrollmentId</label><input id="cancel-enrollmentId" value="1"></div>
+          </div>
+          <button style="width: 100%; margin-top: 8px;" onclick="cancelEnrollment()">🗑️ 수강 취소 DELETE</button>
         </div>
 
         <div style="border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px;">
@@ -181,9 +190,77 @@
       </div>
       <div id="res-schedule" class="result">결과가 여기 표시됩니다.</div>
     </div>
+
+    <div class="card">
+      <h2>🏅 이수증(수료증) 테스트</h2>
+      <div class="info-box">
+        <strong>기능:</strong> 내 이수증(수료증) 목록 조회 및 PDF 다운로드<br>
+        <strong>API:</strong> /api/user/certificates, /api/user/certificates/{certificateId}
+      </div>
+      <div class="row" style="gap: 6px;">
+        <button onclick="getMyCertificates()">내 이수증 목록 GET</button>
+        <input id="cert-id" placeholder="certificateId" style="width:120px;">
+        <button onclick="getCertificateDetail()">이수증 상세 GET</button>
+        <button onclick="downloadCertificatePdf()">PDF 다운로드</button>
+      </div>
+      <div id="res-certificates" class="result">결과가 여기 표시됩니다.</div>
+    </div>
   </div>
 
-  <!-- 탭 3: 수강 캘린더 -->
+  <!-- 탭 3: 학습/평가 -->
+  <div id="panel-learning" class="panel">
+    <div class="card">
+      <h2>🎬 영상 학습 API</h2>
+      <div class="grid">
+        <div><label>courseId (영상 목록)</label><input id="video-courseId" value="1"></div>
+        <div><label>lectureId (스트리밍/상태)</label><input id="video-lectureId" value="1"></div>
+        <div><label>videoId (시청 로그)</label><input id="video-videoId" value="1"></div>
+        <div><label>filename (스트리밍)</label><input id="video-filename" value="sample.mp4"></div>
+        <div><label>watchedSec</label><input id="video-watchedSec" value="120"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getCourseVideos()">🎞️ 코스 영상 목록 GET</button>
+        <button onclick="openVideoStream()">▶️ 영상 스트림 열기 GET</button>
+        <button onclick="startVideoWatch()">⏯️ 시청 시작 POST</button>
+        <button onclick="endVideoWatch()">⏹️ 시청 종료 POST</button>
+        <button onclick="recordVideoWatch()">📝 시청 기록 POST</button>
+        <button onclick="getWatchStatus()">📊 시청 상태 GET</button>
+        <button onclick="completeLecture()">✅ 강의 완료 PUT</button>
+      </div>
+      <div id="res-video" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>🧠 퀴즈/시험 API</h2>
+      <div class="grid">
+        <div><label>lectureId</label><input id="quiz-lectureId" value="1"></div>
+        <div><label>courseId</label><input id="exam-courseId" value="1"></div>
+        <div><label>quizId</label><input id="quiz-quizId" value="1"></div>
+        <div><label>examId</label><input id="exam-examId" value="1"></div>
+        <div style="grid-column: 1 / -1;">
+          <label>answers JSON (questionId: choiceId)</label>
+          <textarea id="assessment-answers">{"1":2}</textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="submitQuizAttempt()">✍️ 퀴즈 제출 POST /lectures/.../quiz/submit</button>
+        <button onclick="getQuizAttempts()">📄 퀴즈 이력 GET /lectures/.../quiz/attempts</button>
+        <button onclick="submitExamAttempt()">✍️ 시험 제출 POST /courses/.../exam/submit</button>
+        <button onclick="getExamAttempts()">📄 시험 이력 GET /courses/.../exam/attempts</button>
+      </div>
+      <div class="row" style="margin-top: 6px;">
+        <button onclick="getUserQuiz()">🧩 퀴즈 조회 GET /quizzes/{lectureId}</button>
+        <button onclick="submitUserQuiz()">📤 퀴즈 제출 POST /quizzes/{quizId}/submit</button>
+        <button onclick="getUserQuizResults()">🏁 퀴즈 결과 GET /quizzes/results</button>
+        <button onclick="getUserExam()">🧪 시험 조회 GET /exams/{courseId}</button>
+        <button onclick="submitUserExam()">📤 시험 제출 POST /exams/{examId}/submit</button>
+        <button onclick="getUserExamResults()">🏁 시험 결과 GET /exams/results</button>
+      </div>
+      <div id="res-assessment" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- 탭 4: 수강 캘린더 -->
   <div id="panel-calendar" class="panel">
     <div class="card">
       <h2>📅 수강 캘린더</h2>
@@ -192,13 +269,57 @@
         <strong>응답:</strong> courseTitle, startDate, endDate, <strong style="color: #dc2626;">status</strong> (NOT_STARTED|IN_PROGRESS|DONE), progress
       </div>
       <div class="row" style="margin-top: 10px;">
-        <button onclick="getEnrollmentCalendar()" style="width: 100%;">📅 수강 캘린더 조회 GET /api/user/calendar</button>
+        <button onclick="getEnrollmentCalendar()" style="width: 100%;">📅 캘린더 조회 GET /api/user/calendar</button>
+        <button onclick="getEnrollmentCalendarAll()" style="width: 100%;">📅 캘린더 전체 GET /api/user/calendar/all</button>
       </div>
       <div id="res-calendar" class="result">결과가 여기 표시됩니다.</div>
     </div>
   </div>
 
-  <!-- 탭 4: Q&A -->
+  <!-- 탭 5: 사용자 정보 -->
+  <div id="panel-user" class="panel">
+    <div class="card">
+      <h2>👤 마이페이지/대시보드</h2>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getMyPage()">🙋 마이페이지 GET</button>
+        <button onclick="getUserDashboard()">📈 대시보드 GET</button>
+      </div>
+      <div id="res-user-core" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>📢 공지사항</h2>
+      <div class="grid">
+        <div><label>page</label><input id="notice-page" value="0"></div>
+        <div><label>size</label><input id="notice-size" value="10"></div>
+        <div><label>noticeId</label><input id="notice-id" value="1"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getUserNotices()">📃 공지 목록 GET</button>
+        <button onclick="getUserNoticeDetail()">📄 공지 상세 GET</button>
+      </div>
+      <div id="res-user-notice" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h2>❓ 사용자 QnA</h2>
+      <div class="grid">
+        <div><label>courseId (선택)</label><input id="uq-courseId" value="1"></div>
+        <div><label>questionId</label><input id="uq-questionId" value="1"></div>
+        <div><label>title</label><input id="uq-title" value="사용자 질문 제목"></div>
+        <div style="grid-column: 1 / -1;"><label>content</label><textarea id="uq-content">사용자 질문 내용</textarea></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <button onclick="getUserQnaQuestions()">📚 질문 목록 GET</button>
+        <button onclick="getUserQnaQuestionDetail()">🔎 질문 상세 GET</button>
+        <button onclick="getUserQnaAnswers()">💬 답변 목록 GET</button>
+        <button onclick="createUserQnaQuestion()">➕ 질문 등록 POST</button>
+      </div>
+      <div id="res-user-qna" class="result">결과가 여기 표시됩니다.</div>
+    </div>
+  </div>
+
+  <!-- 탭 6: Q&A -->
   <div id="panel-qna" class="panel">
     <div class="card">
       <h2>❓ Q&A 테스트</h2>
@@ -342,6 +463,24 @@
     call("GET", "/api/user/courses/" + courseId + "/lectures", null, "res-lecture");
   }
 
+  // ===== 내 강의 =====
+  function getMyCourses() {
+    const page = $("my-course-page").value.trim() || "0";
+    const size = $("my-course-size").value.trim() || "10";
+    const sort = $("my-course-sort").value.trim() || "enrolledAt,desc";
+    call("GET", "/api/user/my-courses?page=" + encodeURIComponent(page) + "&size=" + encodeURIComponent(size) + "&sort=" + encodeURIComponent(sort), null, "res-my-courses");
+  }
+
+  function getMyCourseDetail() {
+    const courseId = $("my-course-id").value.trim();
+    if (!courseId) {
+      $("res-my-courses").className = "result error";
+      $("res-my-courses").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/my-courses/" + courseId, null, "res-my-courses");
+  }
+
   // ===== 수강 신청 & 조회 =====
   function applyEnrollment() {
     const roundId = $("enroll-roundId").value.trim();
@@ -352,6 +491,17 @@
     }
     call("POST", "/api/user/enrollments?roundId=" + roundId, null, "res-enroll");
   }
+
+  function cancelEnrollment() {
+    const enrollmentId = $("cancel-enrollmentId").value.trim();
+    if (!enrollmentId) {
+      $("res-enroll").className = "result error";
+      $("res-enroll").textContent = "❌ enrollmentId를 입력하세요";
+      return;
+    }
+    call("DELETE", "/api/user/enrollments/cancel/" + enrollmentId, null, "res-enroll");
+  }
+
   function getMyHistory() {
     call("GET", "/api/user/enrollments/history", null, "res-enroll");
   }
@@ -410,6 +560,9 @@
   function getEnrollmentCalendar() {
     call("GET", "/api/user/calendar/all", null, "res-calendar");
   }
+  function getEnrollmentCalendarAll() {
+    call("GET", "/api/user/calendar/all", null, "res-calendar");
+  }
 
   // ===== 이수증(수료증) =====
   function getMyCertificates() {
@@ -463,6 +616,260 @@
       $("res-certificates").className = "result error";
       $("res-certificates").textContent = "❌ 에러: " + e.message;
     }
+  }
+
+  // ===== 영상 학습 =====
+  function getCourseVideos() {
+    const courseId = $("video-courseId").value.trim();
+    if (!courseId) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/courses/" + courseId + "/videos", null, "res-video");
+  }
+
+  function openVideoStream() {
+    const lectureId = $("video-lectureId").value.trim();
+    const filename = $("video-filename").value.trim();
+    if (!lectureId || !filename) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ lectureId와 filename을 입력하세요";
+      return;
+    }
+    const url = base() + "/api/user/videos/" + encodeURIComponent(lectureId) + "/stream/" + encodeURIComponent(filename);
+    window.open(url, "_blank");
+    $("res-video").className = "result";
+    $("res-video").textContent = "✅ 새 탭에서 스트리밍 URL을 열었습니다: " + url;
+  }
+
+  function startVideoWatch() {
+    const videoId = $("video-videoId").value.trim();
+    if (!videoId) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ videoId를 입력하세요";
+      return;
+    }
+    call("POST", "/api/user/videos/" + videoId + "/watch/start", null, "res-video");
+  }
+
+  function endVideoWatch() {
+    const videoId = $("video-videoId").value.trim();
+    const watchedSec = $("video-watchedSec").value.trim();
+    if (!videoId || !watchedSec) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ videoId와 watchedSec를 입력하세요";
+      return;
+    }
+    call("POST", "/api/user/videos/" + videoId + "/watch/end?watchedSec=" + encodeURIComponent(watchedSec), null, "res-video");
+  }
+
+  function recordVideoWatch() {
+    const videoId = $("video-videoId").value.trim();
+    const watchedSec = $("video-watchedSec").value.trim();
+    if (!videoId || !watchedSec) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ videoId와 watchedSec를 입력하세요";
+      return;
+    }
+    call("POST", "/api/user/videos/" + videoId + "/watch", { watchedSec: Number(watchedSec) }, "res-video");
+  }
+
+  function getWatchStatus() {
+    const lectureId = $("video-lectureId").value.trim();
+    if (!lectureId) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ lectureId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/lectures/" + lectureId + "/watch-status", null, "res-video");
+  }
+
+  function completeLecture() {
+    const lectureId = $("video-lectureId").value.trim();
+    if (!lectureId) {
+      $("res-video").className = "result error";
+      $("res-video").textContent = "❌ lectureId를 입력하세요";
+      return;
+    }
+    call("PUT", "/api/user/lectures/" + lectureId + "/complete", null, "res-video");
+  }
+
+  // ===== 퀴즈/시험 =====
+  function readAnswersOrError(resultId) {
+    const raw = $("assessment-answers").value.trim();
+    try {
+      const parsed = JSON.parse(raw);
+      return { answers: parsed };
+    } catch (e) {
+      $(resultId).className = "result error";
+      $(resultId).textContent = "❌ answers JSON 형식이 잘못되었습니다. 예: {\"1\":2}";
+      return null;
+    }
+  }
+
+  function submitQuizAttempt() {
+    const lectureId = $("quiz-lectureId").value.trim();
+    if (!lectureId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ lectureId를 입력하세요";
+      return;
+    }
+    const body = readAnswersOrError("res-assessment");
+    if (!body) return;
+    call("POST", "/api/user/lectures/" + lectureId + "/quiz/submit", body, "res-assessment");
+  }
+
+  function getQuizAttempts() {
+    const lectureId = $("quiz-lectureId").value.trim();
+    if (!lectureId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ lectureId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/lectures/" + lectureId + "/quiz/attempts", null, "res-assessment");
+  }
+
+  function submitExamAttempt() {
+    const courseId = $("exam-courseId").value.trim();
+    if (!courseId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    const body = readAnswersOrError("res-assessment");
+    if (!body) return;
+    call("POST", "/api/user/courses/" + courseId + "/exam/submit", body, "res-assessment");
+  }
+
+  function getExamAttempts() {
+    const courseId = $("exam-courseId").value.trim();
+    if (!courseId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/courses/" + courseId + "/exam/attempts", null, "res-assessment");
+  }
+
+  function submitUserQuiz() {
+    const quizId = $("quiz-quizId").value.trim();
+    if (!quizId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ quizId를 입력하세요";
+      return;
+    }
+    const body = readAnswersOrError("res-assessment");
+    if (!body) return;
+    call("POST", "/api/user/quizzes/" + quizId + "/submit", body, "res-assessment");
+  }
+
+  function getUserQuiz() {
+    const lectureId = $("quiz-lectureId").value.trim();
+    if (!lectureId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ lectureId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/quizzes/" + lectureId, null, "res-assessment");
+  }
+
+  function getUserQuizResults() {
+    call("GET", "/api/user/quizzes/results", null, "res-assessment");
+  }
+
+  function getUserExam() {
+    const courseId = $("exam-courseId").value.trim();
+    if (!courseId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ courseId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/exams/" + courseId, null, "res-assessment");
+  }
+
+  function submitUserExam() {
+    const examId = $("exam-examId").value.trim();
+    if (!examId) {
+      $("res-assessment").className = "result error";
+      $("res-assessment").textContent = "❌ examId를 입력하세요";
+      return;
+    }
+    const body = readAnswersOrError("res-assessment");
+    if (!body) return;
+    call("POST", "/api/user/exams/" + examId + "/submit", body, "res-assessment");
+  }
+
+  function getUserExamResults() {
+    call("GET", "/api/user/exams/results", null, "res-assessment");
+  }
+
+  // ===== 사용자 정보 =====
+  function getMyPage() {
+    call("GET", "/api/user/mypage", null, "res-user-core");
+  }
+
+  function getUserDashboard() {
+    call("GET", "/api/user/dashboard", null, "res-user-core");
+  }
+
+  function getUserNotices() {
+    const page = $("notice-page").value.trim() || "0";
+    const size = $("notice-size").value.trim() || "10";
+    call("GET", "/api/user/notices?page=" + encodeURIComponent(page) + "&size=" + encodeURIComponent(size), null, "res-user-notice");
+  }
+
+  function getUserNoticeDetail() {
+    const noticeId = $("notice-id").value.trim();
+    if (!noticeId) {
+      $("res-user-notice").className = "result error";
+      $("res-user-notice").textContent = "❌ noticeId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/notices/" + noticeId, null, "res-user-notice");
+  }
+
+  // ===== 사용자 QnA =====
+  function getUserQnaQuestions() {
+    const courseId = $("uq-courseId").value.trim();
+    const query = courseId ? "?courseId=" + encodeURIComponent(courseId) : "";
+    call("GET", "/api/user/qna/questions" + query, null, "res-user-qna");
+  }
+
+  function getUserQnaQuestionDetail() {
+    const questionId = $("uq-questionId").value.trim();
+    if (!questionId) {
+      $("res-user-qna").className = "result error";
+      $("res-user-qna").textContent = "❌ questionId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/qna/questions/" + questionId, null, "res-user-qna");
+  }
+
+  function getUserQnaAnswers() {
+    const questionId = $("uq-questionId").value.trim();
+    if (!questionId) {
+      $("res-user-qna").className = "result error";
+      $("res-user-qna").textContent = "❌ questionId를 입력하세요";
+      return;
+    }
+    call("GET", "/api/user/qna/questions/" + questionId + "/answers", null, "res-user-qna");
+  }
+
+  function createUserQnaQuestion() {
+    const courseId = $("uq-courseId").value.trim();
+    const title = $("uq-title").value.trim();
+    const content = $("uq-content").value.trim();
+    if (!courseId || !title || !content) {
+      $("res-user-qna").className = "result error";
+      $("res-user-qna").textContent = "❌ courseId, title, content를 모두 입력하세요";
+      return;
+    }
+    call("POST", "/api/user/qna/questions", {
+      courseId: Number(courseId),
+      title: title,
+      content: content
+    }, "res-user-qna");
   }
 
   // ===== Q&A =====
