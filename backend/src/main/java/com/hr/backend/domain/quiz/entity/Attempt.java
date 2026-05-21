@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 응시 결과 - 퀴즈/시험 공용
@@ -44,6 +46,10 @@ public class Attempt {
 
     @Column(name = "attempted_at", nullable = false, updatable = false)
     private LocalDateTime attemptedAt;
+
+    /** 문항별 답안 내역 (정답/오답 포함) */
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AttemptAnswer> answers = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
