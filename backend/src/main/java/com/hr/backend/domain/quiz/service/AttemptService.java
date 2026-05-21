@@ -11,9 +11,12 @@ import com.hr.backend.domain.enrollment.service.EnrollmentService;
 import com.hr.backend.domain.quiz.dto.AttemptRequest;
 import com.hr.backend.domain.quiz.dto.AttemptResponse;
 import com.hr.backend.domain.quiz.entity.Attempt;
+import com.hr.backend.domain.quiz.entity.AttemptAnswer;
+import com.hr.backend.domain.quiz.entity.Choice;
 import com.hr.backend.domain.quiz.entity.Exam;
 import com.hr.backend.domain.quiz.entity.Question;
 import com.hr.backend.domain.quiz.entity.Quiz;
+import com.hr.backend.domain.quiz.repository.AttemptAnswerRepository;
 import com.hr.backend.domain.quiz.repository.AttemptRepository;
 import com.hr.backend.domain.quiz.repository.ExamRepository;
 import com.hr.backend.domain.quiz.repository.QuizRepository;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -33,22 +37,23 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class AttemptService {
 
-    private final AttemptRepository        attemptRepository;
-    private final QuizRepository           quizRepository;
-    private final ExamRepository           examRepository;
-    private final UserRepository           userRepository;
-    private final LectureRepository        lectureRepository;
+    private final AttemptRepository         attemptRepository;
+    private final AttemptAnswerRepository   attemptAnswerRepository;
+    private final QuizRepository            quizRepository;
+    private final ExamRepository            examRepository;
+    private final UserRepository            userRepository;
+    private final LectureRepository         lectureRepository;
     private final LectureProgressRepository lectureProgressRepository;
-    private final EnrollmentRepository     enrollmentRepository;
+    private final EnrollmentRepository      enrollmentRepository;
     private final CertificateWorkflowService certificateWorkflowService;
-    private final EnrollmentService        enrollmentService;
+    private final EnrollmentService         enrollmentService;
 
     // ──────────────────────────────────────────────────────────
     // 퀴즈 응시
     // ──────────────────────────────────────────────────────────
 
     /**
-     * 퀴즈 제출 → 채점 → LectureProgress 완료 처리(통과 시)
+     * 퀴즈 제출 → 채점 → 문항별 답안 저장 → LectureProgress 완료 처리(통과 시)
      */
     @Transactional
     public AttemptResponse submitQuiz(Long userId, Long lectureId, AttemptRequest req) {
@@ -56,16 +61,19 @@ public class AttemptService {
         Quiz quiz = quizRepository.findByLecture_LectureId(lectureId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 강의의 퀴즈가 없습니다."));
 
-        int score = grade(quiz.getQuestions(), req.getAnswers());
+        GradeResult result = grade(quiz.getQuestions(), req.getAnswers());
 
         Attempt attempt = Attempt.builder()
                 .user(user)
                 .quiz(quiz)
                 .exam(null)
-                .score(score)
+                .score(result.score())
                 .passScore(quiz.getPassScore())
                 .build();
         Attempt saved = attemptRepository.save(attempt);
+
+        // 문항별 답안 저장
+        saveAttemptAnswers(saved, result.answers());
 
         // 통과 시 LectureProgress 완료 처리
         if (saved.isPassed()) {
@@ -89,7 +97,7 @@ public class AttemptService {
     // ──────────────────────────────────────────────────────────
 
     /**
-     * 시험 제출 → 채점 → Enrollment DONE + 이수증 트리거(통과 시)
+     * 시험 제출 → 채점 → 문항별 답안 저장 → Enrollment DONE + 이수증 트리거(통과 시)
      */
     @Transactional
     public AttemptResponse submitExam(Long userId, Long courseId, AttemptRequest req) {
@@ -97,16 +105,19 @@ public class AttemptService {
         Exam exam = examRepository.findByCourse_CourseId(courseId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 강좌의 시험이 없습니다."));
 
-        int score = grade(exam.getQuestions(), req.getAnswers());
+        GradeResult result = grade(exam.getQuestions(), req.getAnswers());
 
         Attempt attempt = Attempt.builder()
                 .user(user)
                 .quiz(null)
                 .exam(exam)
-                .score(score)
+                .score(result.score())
                 .passScore(exam.getPassScore())
                 .build();
         Attempt saved = attemptRepository.save(attempt);
+
+        // 문항별 답안 저장
+        saveAttemptAnswers(saved, result.answers());
 
         // 통과 시 수강 완료(DONE) 처리 + 이수증 트리거
         if (saved.isPassed()) {
@@ -129,22 +140,49 @@ public class AttemptService {
     // private helpers
     // ──────────────────────────────────────────────────────────
 
-    /** 채점: 정답 선택지와 제출 답안 비교 → 총점 계산 */
-    private int grade(List<Question> questions, Map<Long, Long> answers) {
-        if (answers == null || answers.isEmpty()) return 0;
+    /** 채점 결과 — 총점 + 문항별 답안 목록 */
+    private record GradeResult(int score, List<AttemptAnswer.Draft> answers) {}
+
+    /**
+     * 채점: 정답 선택지와 제출 답안 비교 → 총점 + 문항별 정오답 Draft 반환
+     * Draft는 Attempt FK가 없는 임시 객체이며, saveAttemptAnswers()에서 영속화함
+     */
+    private GradeResult grade(List<Question> questions, Map<Long, Long> answers) {
+        if (answers == null || answers.isEmpty()) {
+            return new GradeResult(0, List.of());
+        }
 
         int totalScore = 0;
+        List<AttemptAnswer.Draft> drafts = new ArrayList<>();
+
         for (Question q : questions) {
             Long submittedChoiceId = answers.get(q.getQuestionId());
-            if (submittedChoiceId == null) continue;
 
-            boolean correct = q.getChoices().stream()
-                    .anyMatch(c -> c.getChoiceId().equals(submittedChoiceId) && c.isCorrect());
-            if (correct) {
-                totalScore += q.getScore();
-            }
+            Choice selectedChoice = submittedChoiceId == null ? null :
+                    q.getChoices().stream()
+                            .filter(c -> c.getChoiceId().equals(submittedChoiceId))
+                            .findFirst()
+                            .orElse(null);
+
+            boolean correct = selectedChoice != null && selectedChoice.isCorrect();
+            if (correct) totalScore += q.getScore();
+
+            drafts.add(new AttemptAnswer.Draft(q, selectedChoice, correct));
         }
-        return totalScore;
+        return new GradeResult(totalScore, drafts);
+    }
+
+    /** 문항별 답안을 attempt_answers 테이블에 일괄 저장 */
+    private void saveAttemptAnswers(Attempt attempt, List<AttemptAnswer.Draft> drafts) {
+        List<AttemptAnswer> entities = drafts.stream()
+                .map(d -> AttemptAnswer.builder()
+                        .attempt(attempt)
+                        .question(d.question())
+                        .choice(d.choice())
+                        .correct(d.correct())
+                        .build())
+                .toList();
+        attemptAnswerRepository.saveAll(entities);
     }
 
     /** 강의 완료 처리 — 이미 완료된 경우 멱등성 보장 */
