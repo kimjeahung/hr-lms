@@ -77,7 +77,7 @@ public class VideoProgressService {
                 .userId(userId)
                 .employeeNo(enrollment.getUser().getEmployeeNo())
                 .userName(enrollment.getUser().getName())
-                .departmentName(enrollment.getUser().getDepartment().getName())
+                .departmentName(deptName(enrollment))
                 .enrollmentId(enrollmentId)
                 .courseTitle(enrollment.getRound().getCourse().getTitle())
                 .enrollmentProgress(enrollment.getProgress())
@@ -104,7 +104,7 @@ public class VideoProgressService {
                     .userId(userId)
                     .employeeNo(enrollment.getUser().getEmployeeNo())
                     .userName(enrollment.getUser().getName())
-                    .departmentName(enrollment.getUser().getDepartment().getName())
+                    .departmentName(deptName(enrollment))
                     .enrollmentId(enrollment.getEnrollmentId())
                     .courseTitle(enrollment.getRound().getCourse().getTitle())
                     .enrollmentProgress(enrollment.getProgress())
@@ -140,5 +140,11 @@ public class VideoProgressService {
                 "completedLectures", completedLectures,
                 "completionRate",    rate
         );
+    }
+
+    /** 부서명 null-safe 추출 */
+    private String deptName(Enrollment enrollment) {
+        var dept = enrollment.getUser().getDepartment();
+        return dept != null ? dept.getName() : null;
     }
 }

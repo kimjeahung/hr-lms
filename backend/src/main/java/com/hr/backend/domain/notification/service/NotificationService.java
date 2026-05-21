@@ -5,6 +5,7 @@ import com.hr.backend.domain.notification.entity.Notification;
 import com.hr.backend.domain.notification.entity.Notification.NotificationType;
 import com.hr.backend.domain.notification.repository.NotificationRepository;
 import com.hr.backend.domain.user.entity.User;
+import com.hr.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository         userRepository;
 
     // ──────────────────────────────────────────────────────────
     // 알림 생성 (내부 서비스에서 호출)
@@ -103,6 +105,46 @@ public class NotificationService {
     @Transactional
     public void markAllAsRead(Long userId) {
         notificationRepository.markAllAsReadByUserId(userId);
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // 관리자 API용
+    // ──────────────────────────────────────────────────────────
+
+    /** 전체 알림 이력 조회 (최신순) */
+    public List<NotificationResponse> getAllNotifications() {
+        return notificationRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(NotificationResponse::new)
+                .toList();
+    }
+
+    /** 유형별 알림 이력 조회 */
+    public List<NotificationResponse> getNotificationsByType(NotificationType type) {
+        return notificationRepository.findAllByTypeOrderByCreatedAtDesc(type)
+                .stream()
+                .map(NotificationResponse::new)
+                .toList();
+    }
+
+    /**
+     * 공지 알림 브로드캐스트.
+     * userIds 비어있으면 전체 직원(ROLE_USER)에게 발송.
+     */
+    @Transactional
+    public int broadcast(String message, List<Long> userIds) {
+        List<User> targets;
+        if (userIds == null || userIds.isEmpty()) {
+            targets = userRepository.findAll().stream()
+                    .filter(u -> !"ROLE_ADMIN".equals(u.getRole()) && u.isActive())
+                    .toList();
+        } else {
+            targets = userRepository.findAllById(userIds);
+        }
+
+        targets.forEach(user -> create(user, NotificationType.SYSTEM, message, null));
+        log.info("공지 알림 브로드캐스트: {}명 발송, message={}", targets.size(), message);
+        return targets.size();
     }
 
     // ──────────────────────────────────────────────────────────
