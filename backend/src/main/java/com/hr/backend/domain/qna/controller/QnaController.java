@@ -164,8 +164,8 @@ public class QnaController {
     private QnaQuestionResponse toQuestionResponse(QnaQuestion q) {
         return QnaQuestionResponse.builder()
                 .questionId(q.getQuestionId())
-                .courseId(q.getCourseId())
-                .userId(q.getUserId())
+                .courseId(q.getCourse().getCourseId())
+                .userId(q.getUser().getUserId())
                 .title(q.getTitle())
                 .content(q.getContent())
                 .isResolved(q.isResolved())
@@ -177,8 +177,8 @@ public class QnaController {
     private QnaAnswerResponse toAnswerResponse(QnaAnswer a) {
         return QnaAnswerResponse.builder()
                 .answerId(a.getAnswerId())
-                .questionId(a.getQuestionId())
-                .authorId(a.getAuthorId())
+                .questionId(a.getQuestion().getQuestionId())
+                .authorId(a.getAuthor().getUserId())
                 .content(a.getContent())
                 .createdAt(a.getCreatedAt())
                 .updatedAt(a.getUpdatedAt())

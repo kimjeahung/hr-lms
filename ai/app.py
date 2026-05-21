@@ -2,12 +2,24 @@ from flask import Flask, request, jsonify
 import requests
 from dotenv import load_dotenv
 import os
+import logging
+from collections import deque
+from threading import Lock
 
 load_dotenv()  # .env 파일 읽어오기
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")  # .env에서 키 가져오기
+
+# 대화 기록 최대 유지 건수 (system 메시지 1개 + 사용자/AI 메시지 N개)
+MAX_HISTORY_PER_USER = int(os.getenv("MAX_HISTORY_PER_USER", "20"))
+# 서버 전체 최대 사용자 수 (메모리 보호)
+MAX_USERS = int(os.getenv("MAX_USERS", "500"))
+
+_history_lock = Lock()  # conversation_history 동시 접근 보호
 
 education_data = """
 [사내 교육 자료 - 법정의무교육 및 추가교육]
@@ -42,47 +54,86 @@ MODELS = [
     "tencent/hunyuan-a13b-instruct:free",
 ]
 
-# ✅ 대화 기록 저장 (사용자별로 관리하려면 나중에 세션 추가)
-conversation_history = {}
+# ✅ 사용자별 대화 기록 — deque(maxlen)으로 자동 크기 제한, Lock으로 동시성 보호
+# {user_id: deque([{"role": ..., "content": ...}, ...])}
+conversation_history: dict[str, deque] = {}
 
-def ask_ai(messages):
+
+def _get_or_create_history(user_id: str) -> list:
+    """스레드 안전하게 사용자 히스토리를 가져온다 (없으면 초기화)."""
+    with _history_lock:
+        if user_id not in conversation_history:
+            # 서버 메모리 보호: 사용자 수 상한 초과 시 가장 오래된 사용자 삭제
+            if len(conversation_history) >= MAX_USERS:
+                oldest_user = next(iter(conversation_history))
+                del conversation_history[oldest_user]
+                logger.warning("최대 사용자 수 초과 — 오래된 세션 삭제: %s", oldest_user)
+
+            history = deque(maxlen=MAX_HISTORY_PER_USER)
+            history.append({"role": "system", "content": system_prompt})
+            conversation_history[user_id] = history
+
+        return list(conversation_history[user_id])
+
+
+def _append_history(user_id: str, role: str, content: str) -> None:
+    """스레드 안전하게 메시지를 히스토리에 추가한다."""
+    with _history_lock:
+        if user_id in conversation_history:
+            conversation_history[user_id].append({"role": role, "content": content})
+
+
+def ask_ai(messages: list) -> str:
+    """OpenRouter API를 호출한다. 모든 모델 실패 시 안내 메시지를 반환한다."""
     for model in MODELS:
-        response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
-            headers={"Authorization": f"Bearer {API_KEY}"},
-            json={"model": model, "messages": messages}
-        )
-        data = response.json()
-        if 'choices' in data:
-            return data['choices'][0]['message']['content']
+        try:
+            response = requests.post(
+                url="https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {API_KEY}"},
+                json={"model": model, "messages": messages},
+                timeout=15,  # 15초 타임아웃
+            )
+            response.raise_for_status()
+            data = response.json()
+            if "choices" in data and data["choices"]:
+                return data["choices"][0]["message"]["content"]
+            logger.warning("모델 %s 응답에 choices 없음: %s", model, data)
+        except requests.exceptions.Timeout:
+            logger.warning("모델 %s 타임아웃", model)
+        except requests.exceptions.HTTPError as e:
+            logger.warning("모델 %s HTTP 오류: %s", model, e)
+        except requests.exceptions.RequestException as e:
+            logger.warning("모델 %s 연결 오류: %s", model, e)
+        except (KeyError, ValueError) as e:
+            logger.warning("모델 %s 응답 파싱 오류: %s", model, e)
+
     return "죄송합니다, 현재 서버가 혼잡합니다. 잠시 후 다시 시도해주세요."
+
 
 # ✅ 챗봇 API 엔드포인트
 # 백엔드(Spring Boot)가 이 주소로 POST 요청 보내면 됨
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
-    user_id = data.get('user_id', 'default')   # 사용자 구분용 ID
-    user_message = data.get('message', '')       # 사용자 질문
+    if not data:
+        return jsonify({"error": "요청 본문이 없습니다"}), 400
 
-    # 사용자별 대화 기록 관리
-    if user_id not in conversation_history:
-        conversation_history[user_id] = [
-            {"role": "system", "content": system_prompt}
-        ]
+    user_id = str(data.get('user_id', 'default'))   # 사용자 구분용 ID
+    user_message = data.get('message', '').strip()   # 사용자 질문
 
-    # 질문 추가
-    conversation_history[user_id].append(
-        {"role": "user", "content": user_message}
-    )
+    if not user_message:
+        return jsonify({"error": "message 필드가 비어있습니다"}), 400
+
+    # 히스토리 조회 (system 포함) 후 사용자 메시지 추가
+    messages = _get_or_create_history(user_id)
+    messages.append({"role": "user", "content": user_message})
 
     # AI 답변 요청
-    ai_reply = ask_ai(conversation_history[user_id])
+    ai_reply = ask_ai(messages)
 
-    # 답변 기록 저장
-    conversation_history[user_id].append(
-        {"role": "assistant", "content": ai_reply}
-    )
+    # 히스토리에 사용자 질문 + AI 답변 저장
+    _append_history(user_id, "user", user_message)
+    _append_history(user_id, "assistant", ai_reply)
 
     # 백엔드에 JSON으로 반환
     return jsonify({

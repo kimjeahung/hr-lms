@@ -1,97 +1,101 @@
 package com.hr.backend.domain.qna.service;
 
-import com.hr.backend.domain.qna.dto.QnaQuestionRequest;
+import com.hr.backend.domain.course.entity.Course;
+import com.hr.backend.domain.course.repository.CourseRepository;
 import com.hr.backend.domain.qna.dto.QnaAnswerRequest;
-import com.hr.backend.domain.qna.entity.QnaQuestion;
+import com.hr.backend.domain.qna.dto.QnaQuestionRequest;
 import com.hr.backend.domain.qna.entity.QnaAnswer;
-import com.hr.backend.domain.qna.repository.QnaQuestionRepository;
+import com.hr.backend.domain.qna.entity.QnaQuestion;
 import com.hr.backend.domain.qna.repository.QnaAnswerRepository;
+import com.hr.backend.domain.qna.repository.QnaQuestionRepository;
+import com.hr.backend.domain.user.entity.User;
+import com.hr.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QnaService {
-    private final QnaQuestionRepository questionRepo;
-    private final QnaAnswerRepository answerRepo;
 
+    private final QnaQuestionRepository questionRepo;
+    private final QnaAnswerRepository   answerRepo;
+    private final CourseRepository      courseRepository;
+    private final UserRepository        userRepository;
+
+    @Transactional
     public QnaQuestion createQuestion(Long userId, QnaQuestionRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Course course = courseRepository.findById(req.getCourseId())
+                .orElseThrow(() -> new IllegalArgumentException("과정을 찾을 수 없습니다."));
+
         QnaQuestion q = QnaQuestion.builder()
-                .courseId(req.getCourseId())
-                .userId(userId)
+                .course(course)
+                .user(user)
                 .title(req.getTitle())
                 .content(req.getContent())
-                .isResolved(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return questionRepo.save(q);
     }
 
     public List<QnaQuestion> getQuestionsByCourse(Long courseId) {
-        return questionRepo.findByCourseId(courseId);
-    }
-    public List<QnaQuestion> getQuestionsByUser(Long userId) {
-        return questionRepo.findByUserId(userId);
-    }
-    public QnaQuestion getQuestion(Long questionId) {
-        return questionRepo.findById(questionId).orElseThrow();
+        return questionRepo.findAllByCourse_CourseIdOrderByCreatedAtDesc(courseId);
     }
 
+    public List<QnaQuestion> getQuestionsByUser(Long userId) {
+        return questionRepo.findAllByUser_UserIdOrderByCreatedAtDesc(userId);
+    }
+
+    public QnaQuestion getQuestion(Long questionId) {
+        return questionRepo.findById(questionId)
+                .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다."));
+    }
+
+    @Transactional
     public QnaAnswer createAnswer(Long authorId, QnaAnswerRequest req) {
+        QnaQuestion question = questionRepo.findById(req.getQuestionId())
+                .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다."));
+        User author = userRepository.findById(authorId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
         QnaAnswer a = QnaAnswer.builder()
-                .questionId(req.getQuestionId())
-                .authorId(authorId)
+                .question(question)
+                .author(author)
                 .content(req.getContent())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return answerRepo.save(a);
     }
+
     public List<QnaAnswer> getAnswers(Long questionId) {
-        return answerRepo.findByQuestionId(questionId);
+        return answerRepo.findByQuestion_QuestionId(questionId);
     }
 
-    // 질문 수정
+    @Transactional
     public QnaQuestion updateQuestion(Long questionId, QnaQuestionRequest req) {
         QnaQuestion q = questionRepo.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("질문을 찾을 수 없습니다."));
-        q = QnaQuestion.builder()
-                .questionId(q.getQuestionId())
-                .courseId(q.getCourseId())
-                .userId(q.getUserId())
-                .title(req.getTitle())
-                .content(req.getContent())
-                .isResolved(q.isResolved())
-                .createdAt(q.getCreatedAt())
-                .updatedAt(LocalDateTime.now())
-                .build();
-        return questionRepo.save(q);
+        q.updateContent(req.getTitle(), req.getContent());
+        return q;
     }
 
-    // 질문 삭제
+    @Transactional
     public void deleteQuestion(Long questionId) {
         questionRepo.deleteById(questionId);
     }
 
-    // 답변 수정
+    @Transactional
     public QnaAnswer updateAnswer(Long answerId, QnaAnswerRequest req) {
         QnaAnswer a = answerRepo.findById(answerId)
                 .orElseThrow(() -> new IllegalArgumentException("답변을 찾을 수 없습니다."));
-        a = QnaAnswer.builder()
-                .answerId(a.getAnswerId())
-                .questionId(a.getQuestionId())
-                .authorId(a.getAuthorId())
-                .content(req.getContent())
-                .createdAt(a.getCreatedAt())
-                .updatedAt(LocalDateTime.now())
-                .build();
-        return answerRepo.save(a);
+        a.update(req.getContent());
+        return a;
     }
 
-    // 답변 삭제
+    @Transactional
     public void deleteAnswer(Long answerId) {
         answerRepo.deleteById(answerId);
     }

@@ -4,6 +4,7 @@ import com.hr.backend.admin.dto.EmployeeRequest;
 import com.hr.backend.admin.dto.EmployeeResponse;
 import com.hr.backend.domain.user.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,13 +31,13 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<EmployeeResponse> register(@RequestBody EmployeeRequest req) {
+    public ResponseEntity<EmployeeResponse> register(@Valid @RequestBody EmployeeRequest req) {
         return ResponseEntity.ok(employeeService.register(req));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> update(
-            @PathVariable Long id, @RequestBody EmployeeRequest req) {
+            @PathVariable Long id, @Valid @RequestBody EmployeeRequest req) {
         return ResponseEntity.ok(employeeService.update(id, req));
     }
 

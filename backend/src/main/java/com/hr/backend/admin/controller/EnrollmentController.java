@@ -60,6 +60,16 @@ public class EnrollmentController {
         return ResponseEntity.ok(enrollmentService.getByCourse(courseId));
     }
 
+    /**
+     * 승인 대기 중인 수강 신청 목록.
+     * 관리자 승인/반려 화면에서 사용한다.
+     * GET /api/admin/enrollments/pending
+     */
+    @GetMapping("/pending")
+    public ResponseEntity<List<EnrollmentResponse>> getPending() {
+        return ResponseEntity.ok(enrollmentService.getPendingEnrollments());
+    }
+
     // ── 등록 / 상태 변경 ────────────────────────────────────
 
     /** 수강 등록 (차수 기반) */
@@ -89,6 +99,24 @@ public class EnrollmentController {
     public ResponseEntity<EnrollmentResponse> changeEnrollmentStatus(
             @PathVariable Long enrollmentId, @RequestParam String status) {
         return ResponseEntity.ok(enrollmentService.changeEnrollmentStatus(enrollmentId, status));
+    }
+
+    /**
+     * 수강 신청 승인 (PENDING → APPROVED + IN_PROGRESS).
+     * 해당 직원에게 승인 알림이 자동 발송된다.
+     */
+    @PutMapping("/{enrollmentId}/approve")
+    public ResponseEntity<EnrollmentResponse> approveEnrollment(@PathVariable Long enrollmentId) {
+        return ResponseEntity.ok(enrollmentService.approveEnrollment(enrollmentId));
+    }
+
+    /**
+     * 수강 신청 반려 (PENDING → REJECTED).
+     * 해당 직원에게 반려 알림이 자동 발송된다.
+     */
+    @PutMapping("/{enrollmentId}/reject")
+    public ResponseEntity<EnrollmentResponse> rejectEnrollment(@PathVariable Long enrollmentId) {
+        return ResponseEntity.ok(enrollmentService.rejectEnrollment(enrollmentId));
     }
 
     // ── 통계 ────────────────────────────────────────────────
