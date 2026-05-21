@@ -14,7 +14,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
   servlet:
     multipart:
@@ -39,7 +39,9 @@ certificate:
   n8n-webhook-url: ${BACKEND_N8N_TRIGGER_URL:${N8N_WEBHOOK_URL:}}
   trigger-enabled: ${CERTIFICATE_TRIGGER_ENABLED:true}
   issuer-name: ${CERTIFICATE_ISSUER_NAME:인사하는 인사팀}
+  internal-api-token: ${CERTIFICATE_INTERNAL_API_TOKEN:change-me-in-prod}
 
 video:
   storage-path: ${VIDEO_STORAGE_PATH:/app/videos}
   base-url: ${VIDEO_BASE_URL:/api/user/videos}
+

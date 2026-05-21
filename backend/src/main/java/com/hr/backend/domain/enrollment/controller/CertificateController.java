@@ -1,13 +1,17 @@
 package com.hr.backend.domain.enrollment.controller;
 
+import com.hr.backend.domain.enrollment.dto.CertificateActionResponse;
+import com.hr.backend.domain.enrollment.dto.CertificateFailRequest;
 import com.hr.backend.domain.enrollment.dto.CertificateGenerateRequest;
 import com.hr.backend.domain.enrollment.dto.CertificateGenerateResponse;
 import com.hr.backend.domain.enrollment.entity.Certificate;
+import com.hr.backend.domain.enrollment.service.CertificateGenerationException;
 import com.hr.backend.domain.enrollment.repository.CertificateRepository;
 import com.hr.backend.domain.enrollment.service.CertificateWorkflowService;
 import com.hr.backend.domain.user.entity.User;
 import com.hr.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,6 +36,9 @@ public class CertificateController {
     private final CertificateRepository      certificateRepository;
     private final UserRepository             userRepository;
 
+    @Value("${certificate.internal-api-token:change-me-in-prod}")
+    private String internalApiToken;
+
     /**
      * 이수증 발급.
      * userId는 JWT에서 자동 추출 — 클라이언트가 타인의 userId를 넣어도 무시한다.
@@ -48,6 +55,21 @@ public class CertificateController {
         request.setUserId(user.getUserId());
 
         return ResponseEntity.ok(certificateService.generateCertificate(request));
+    }
+
+    /** 이수증 발급 실패 처리 (n8n 내부 호출용) */
+    @PostMapping("/fail")
+    public ResponseEntity<CertificateActionResponse> fail(
+            @RequestHeader(value = "X-Internal-Token", required = false) String token,
+            @RequestBody CertificateFailRequest request) {
+        if (!isValidInternalToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(CertificateActionResponse.builder()
+                            .success(false)
+                            .message("인증되지 않은 내부 요청입니다.")
+                            .build());
+        }
+        return ResponseEntity.ok(certificateService.handleFailure(request));
     }
 
     /** 본인 이수증 목록 */
@@ -89,5 +111,9 @@ public class CertificateController {
     private User getUser(String employeeNo) {
         return userRepository.findByEmployeeNo(employeeNo)
                 .orElseThrow(() -> new IllegalStateException("인증된 사용자를 찾을 수 없습니다."));
+    }
+
+    private boolean isValidInternalToken(String token) {
+        return token != null && !token.isBlank() && token.equals(internalApiToken);
     }
 }

@@ -28,6 +28,11 @@ public class PasswordService {
             throw new IllegalArgumentException("새 비밀번호는 8자 이상이어야 합니다.");
         }
 
+        // 비밀번호 복잡도: 대문자, 소문자, 숫자, 특수문자 각 1개 이상 포함
+        if (!req.getNewPassword().matches("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':,.<>?]).{8,}$")) {
+            throw new IllegalArgumentException("비밀번호는 대문자, 소문자, 숫자, 특수문자를 각 1개 이상 포함해야 합니다.");
+        }
+
         user.changePassword(req.getNewPassword(), passwordEncoder);
     }
 }

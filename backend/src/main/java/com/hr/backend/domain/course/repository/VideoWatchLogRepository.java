@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface VideoWatchLogRepository extends JpaRepository<VideoWatchLog, Long> {
@@ -18,4 +19,7 @@ public interface VideoWatchLogRepository extends JpaRepository<VideoWatchLog, Lo
            "  AND w.completed = true")
     long countCompletedByUserAndLecture(@Param("userId") Long userId,
                                         @Param("lectureId") Long lectureId);
+
+    @Query("SELECT w FROM VideoWatchLog w WHERE w.user.userId = :userId AND w.video.lecture.course.courseId = :courseId")
+    List<VideoWatchLog> findByUserIdAndCourseId(@Param("userId") Long userId, @Param("courseId") Long courseId);
 }

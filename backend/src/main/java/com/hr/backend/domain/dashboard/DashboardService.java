@@ -43,14 +43,14 @@ public class DashboardService {
         double overallRate = enrollments.isEmpty() ? 0
                 : Math.round(doneCount * 1000.0 / enrollments.size()) / 10.0;
 
-        // 미이수자 수: 수강 중인데 DONE이 아닌 직원
+        // 미이수자 수: 수강 등록된 강좌가 있고 전부 DONE이 아닌 직원
         long notCompleted = users.stream()
                 .filter(u -> !"ROLE_ADMIN".equals(u.getRole()))
                 .filter(u -> {
                     List<Enrollment> userEnrollments = enrollments.stream()
                             .filter(e -> e.getUser().getUserId().equals(u.getUserId()))
                             .toList();
-                    if (userEnrollments.isEmpty()) return true;
+                    if (userEnrollments.isEmpty()) return false;
                     return userEnrollments.stream().anyMatch(e -> e.getStatus() != Enrollment.Status.DONE);
                 }).count();
 

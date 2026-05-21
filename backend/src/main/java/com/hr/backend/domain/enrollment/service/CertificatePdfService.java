@@ -3,15 +3,20 @@ package com.hr.backend.domain.enrollment.service;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 @Service
@@ -51,6 +56,7 @@ public class CertificatePdfService {
             PdfRendererBuilder builder = new PdfRendererBuilder();
             builder.useFastMode();
             builder.withHtmlContent(htmlContent, null);
+            registerKoreanFonts(builder);
             builder.toStream(os);
             builder.run();
         } catch (Exception e) {
@@ -58,5 +64,55 @@ public class CertificatePdfService {
         }
 
         return pdfFile;
+    }
+
+    private void registerKoreanFonts(PdfRendererBuilder builder) {
+        // 1) 프로젝트에 폰트를 포함한 경우 우선 사용
+        registerClasspathFont(builder, "fonts/NotoSansKR-Regular.ttf", "KoreanEmbedded");
+        registerClasspathFont(builder, "fonts/NotoSansKR-Regular.ttf", "Noto Sans KR");
+        registerClasspathFont(builder, "fonts/NotoSansCJKkr-Regular.otf", "KoreanEmbedded");
+        registerClasspathFont(builder, "fonts/NotoSansCJKkr-Regular.otf", "Noto Sans CJK KR");
+
+        // 2) OS 기본 폰트 경로 fallback
+        for (String path : candidateSystemFontPaths()) {
+            File font = new File(path);
+            if (font.exists() && font.isFile()) {
+                builder.useFont(font, "KoreanFallback");
+                builder.useFont(font, "Malgun Gothic");
+                builder.useFont(font, "NanumGothic");
+                builder.useFont(font, "Noto Sans KR");
+                builder.useFont(font, "Noto Sans CJK KR");
+            }
+        }
+    }
+
+    private void registerClasspathFont(PdfRendererBuilder builder, String classpathLocation, String familyName) {
+        ClassPathResource resource = new ClassPathResource(classpathLocation);
+        if (resource.exists()) {
+            builder.useFont(() -> {
+                try {
+                    return resource.getInputStream();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, familyName);
+        }
+    }
+
+    private Iterable<String> candidateSystemFontPaths() {
+        ArrayList<String> candidates = new ArrayList<>(Arrays.asList(
+                "C:/Windows/Fonts/malgun.ttf",
+                "C:/Windows/Fonts/NanumGothic.ttf",
+                "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+        ));
+
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null && !javaHome.isBlank()) {
+            candidates.add(javaHome + "/lib/fonts/NanumGothic.ttf");
+        }
+
+        return candidates;
     }
 }

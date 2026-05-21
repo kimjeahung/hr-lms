@@ -43,9 +43,14 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/health", "/admin-test.html", "/", "/*.html").permitAll()
+                .requestMatchers("/health").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/admin-test.html",
+                        "/admin2-test.html",
+                        "/user-test.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // CORS preflight
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/certificate/generate", "/api/certificate/fail").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/user/courses").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/auth/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

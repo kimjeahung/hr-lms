@@ -1,6 +1,31 @@
 name: hr-lms-app
 
 services:
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lms}
+      MYSQL_USER: ${MYSQL_USER:-lms_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - "./LMS_DB ver 1.0.1.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   frontend:
     build:
       context: ./frontend
@@ -26,14 +51,18 @@ services:
     ports:
       - "${BACKEND_HTTP_PORT:-8085}:8080"
     depends_on:
+      mysql:
+        condition: service_healthy
       ai:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
       AI_SERVER_URL: ${AI_SERVER_URL:-http://ai:5000}
       JWT_SECRET: ${JWT_SECRET}
+      CERTIFICATE_INTERNAL_API_TOKEN: ${CERTIFICATE_INTERNAL_API_TOKEN}
       CERTIFICATE_STORAGE_PATH: ${CERTIFICATE_STORAGE_PATH:-/app/certificates}
       BACKEND_N8N_TRIGGER_URL: ${BACKEND_N8N_TRIGGER_URL:-http://n8n:5678/webhook/certificate}
       CERTIFICATE_ISSUER_NAME: ${CERTIFICATE_ISSUER_NAME:-인사하는 인사팀}
@@ -48,7 +77,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 90s
 
   ai:
     build: ./ai
@@ -74,6 +103,7 @@ services:
       N8N_PROTOCOL: http
       WEBHOOK_URL: ${N8N_PUBLIC_WEBHOOK_BASE_URL:-http://192.168.2.46:5678}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me-32-char-encryption-key}
+      CERTIFICATE_INTERNAL_API_TOKEN: ${CERTIFICATE_INTERNAL_API_TOKEN}
       GENERIC_TIMEZONE: Asia/Seoul
       TZ: Asia/Seoul
     restart: unless-stopped
@@ -96,6 +126,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  mysql-data:
   n8n_data:
   certificate-storage:
   video-storage:
