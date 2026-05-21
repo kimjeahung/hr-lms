@@ -21,11 +21,12 @@ import java.util.List;
 /**
  * 관리자용 이수증 관리 API
  *
- * GET  /api/admin/certificates                     — 전체 이수증 목록
- * GET  /api/admin/certificates/user/{userId}        — 직원별 이수증 목록
- * GET  /api/admin/certificates/course/{courseId}    — 강좌별 이수증 목록
- * POST /api/admin/certificates/generate             — 수동 이수증 발급
- * GET  /api/admin/certificates/{id}/download        — 이수증 PDF 다운로드
+ * GET    /api/admin/certificates                     — 전체 이수증 목록
+ * GET    /api/admin/certificates/user/{userId}        — 직원별 이수증 목록
+ * GET    /api/admin/certificates/course/{courseId}    — 강좌별 이수증 목록
+ * POST   /api/admin/certificates/generate             — 수동 이수증 발급
+ * GET    /api/admin/certificates/{id}/download        — 이수증 PDF 다운로드
+ * DELETE /api/admin/certificates/{id}                 — 이수증 삭제(취소)
  */
 @RestController
 @RequestMapping("/api/admin/certificates")
@@ -72,6 +73,18 @@ public class AdminCertificateController {
     public ResponseEntity<CertificateGenerateResponse> generate(
             @RequestBody CertificateGenerateRequest request) {
         return ResponseEntity.ok(certificateWorkflowService.generateCertificate(request));
+    }
+
+    /**
+     * 이수증 삭제(취소).
+     * 잘못 발급된 이수증을 삭제한다. PDF 파일은 스토리지에 남을 수 있음.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        Certificate cert = certificateRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("이수증을 찾을 수 없습니다. id=" + id));
+        certificateRepository.delete(cert);
+        return ResponseEntity.noContent().build();
     }
 
     /** PDF 다운로드 */

@@ -49,4 +49,15 @@ public interface AttemptRepository extends JpaRepository<Attempt, Long> {
             Long userId,
             Long courseId
     );
+
+    // ── 관리자용 ──────────────────────────────────────────────
+
+    /** 특정 강좌의 시험 전체 응시 목록 (최신순) */
+    List<Attempt> findAllByExam_Course_CourseIdOrderByAttemptedAtDesc(Long courseId);
+
+    /** 특정 강좌의 퀴즈 전체 응시 목록 (최신순) */
+    List<Attempt> findAllByQuiz_Lecture_Course_CourseIdOrderByAttemptedAtDesc(Long courseId);
+
+    /** 특정 시험의 전체 응시 목록 */
+    List<Attempt> findAllByExam_ExamIdOrderByAttemptedAtDesc(Long examId);
 }
