@@ -19,10 +19,13 @@ import java.time.LocalDate;
  * 앱 최초 실행 시 테스트용 데이터 자동 생성
  * - 관리자 계정: ADMIN001 / ADMIN001 (사번 = 초기 비밀번호)
  * - 기본 부서: 관리팀
+ *
+ * ⚠️ prod 프로파일에서는 실행되지 않음 (@Profile("!prod"))
+ *    프로덕션 초기 데이터는 별도의 DB 마이그레이션 스크립트 사용
  */
 @Slf4j
+@Profile("!prod")   // prod 환경에서는 이 Bean 등록 자체를 건너뜀
 @Component
-@Profile("local")
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 
@@ -59,6 +62,26 @@ public class DataInitializer implements ApplicationRunner {
                     .build();
             userRepository.save(admin);
             log.info("[DataInitializer] 관리자 계정 생성 완료 (ADMIN001 / ADMIN001)");
+        }
+
+        // 일반 유저 테스트 계정
+        if (!userRepository.existsByEmployeeNo("EMP001")) {
+            Department dept = departmentRepository.findAll().get(1); // 개발팀
+            User user = User.builder()
+                    .employeeNo("EMP001")
+                    .name("테스트직원")
+                    .email("emp001@company.com")
+                    .rawPassword("EMP001")     // 초기 비밀번호 = 사번
+                    .department(dept)
+                    .position("사원")
+                    .empType(0)
+                    .role("ROLE_USER")
+                    .phone("010-1234-5678")
+                    .hireDate(LocalDate.now())
+                    .encoder(passwordEncoder)
+                    .build();
+            userRepository.save(user);
+            log.info("[DataInitializer] 일반 유저 계정 생성 완료 (EMP001 / EMP001)");
         }
     }
 }

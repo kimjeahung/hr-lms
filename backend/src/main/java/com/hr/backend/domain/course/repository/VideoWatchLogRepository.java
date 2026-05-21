@@ -12,6 +12,14 @@ public interface VideoWatchLogRepository extends JpaRepository<VideoWatchLog, Lo
 
     Optional<VideoWatchLog> findByUser_UserIdAndVideo_VideoId(Long userId, Long videoId);
 
+    /** 특정 사용자 + 강의 내 완료 영상 수 */
+    @Query("SELECT COUNT(w) FROM VideoWatchLog w " +
+           "WHERE w.user.userId = :userId " +
+           "  AND w.video.lecture.lectureId = :lectureId " +
+           "  AND w.completed = true")
+    long countCompletedByUserAndLecture(@Param("userId") Long userId,
+                                        @Param("lectureId") Long lectureId);
+
     @Query("SELECT w FROM VideoWatchLog w WHERE w.user.userId = :userId AND w.video.lecture.course.courseId = :courseId")
     List<VideoWatchLog> findByUserIdAndCourseId(@Param("userId") Long userId, @Param("courseId") Long courseId);
 }

@@ -35,7 +35,7 @@ public class EmployeeCertificateService {
                 .filter(e -> !certificateRepository.existsByUser_UserIdAndRound_RoundId(userId, e.getRound().getRoundId()))
                 .forEach(certificateWorkflowService::triggerCompletionWorkflow);
 
-        return certificateRepository.findByUser_UserId(userId)
+        return certificateRepository.findAllByUserId(userId)
                 .stream()
                 .map(this::toResponse)
                 .toList();

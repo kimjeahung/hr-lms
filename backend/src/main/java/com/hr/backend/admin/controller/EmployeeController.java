@@ -2,13 +2,20 @@ package com.hr.backend.admin.controller;
 
 import com.hr.backend.admin.dto.EmployeeRequest;
 import com.hr.backend.admin.dto.EmployeeResponse;
+import com.hr.backend.domain.user.service.EmployeeExcelService;
 import com.hr.backend.domain.user.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -16,7 +23,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmployeeController {
 
-    private final EmployeeService employeeService;
+    private final EmployeeService      employeeService;
+    private final EmployeeExcelService employeeExcelService;
 
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAll(
@@ -30,13 +38,13 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<EmployeeResponse> register(@RequestBody EmployeeRequest req) {
+    public ResponseEntity<EmployeeResponse> register(@Valid @RequestBody EmployeeRequest req) {
         return ResponseEntity.ok(employeeService.register(req));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> update(
-            @PathVariable Long id, @RequestBody EmployeeRequest req) {
+            @PathVariable Long id, @Valid @RequestBody EmployeeRequest req) {
         return ResponseEntity.ok(employeeService.update(id, req));
     }
 
@@ -50,5 +58,23 @@ public class EmployeeController {
     public ResponseEntity<List<EmployeeResponse>> registerByExcel(
             @RequestParam("file") MultipartFile file) throws IOException {
         return ResponseEntity.ok(employeeService.registerByExcel(file));
+    }
+
+    /** 직원 목록 Excel 내보내기 (keyword 필터 적용 가능) */
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportExcel(
+            @RequestParam(required = false) String keyword) {
+        List<EmployeeResponse> data = employeeService.getAll(keyword);
+        byte[] excelBytes = employeeExcelService.export(data);
+        String filename = "employees_" + LocalDate.now() + ".xlsx";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(filename, StandardCharsets.UTF_8)
+                                .build().toString())
+                .body(excelBytes);
     }
 }

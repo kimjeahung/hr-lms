@@ -29,11 +29,13 @@ public class DashboardService {
 
     public DashboardResponse getDashboard() {
 
+        // totalCourses는 COUNT 쿼리로, totalEmployees는 전체 조회 없이 count 사용
+        int totalCourses   = (int) courseRepository.countByActiveTrue();
+        int totalEmployees = (int) userRepository.count();
+
+        // 부서별·사용자별 집계를 위해 enrollment 전체 로드 (JOIN FETCH)
         List<User>       users       = userRepository.findAll();
         List<Enrollment> enrollments = enrollmentRepository.findAllWithUserAndCourse();
-
-        int totalEmployees = users.size();
-        int totalCourses   = courseRepository.findAllByActiveTrue().size();
 
         // 전체 이수율: 전체 enrollment 중 DONE 비율
         long doneCount = enrollments.stream()

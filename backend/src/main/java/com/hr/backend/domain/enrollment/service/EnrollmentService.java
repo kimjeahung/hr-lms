@@ -6,7 +6,7 @@ import com.hr.backend.domain.course.entity.Lecture;
 import com.hr.backend.domain.course.repository.CourseRoundRepository;
 import com.hr.backend.domain.enrollment.entity.Enrollment;
 import com.hr.backend.domain.enrollment.repository.EnrollmentRepository;
-import com.hr.backend.domain.enrollment.service.CertificateWorkflowService;
+import com.hr.backend.domain.notification.service.NotificationService;
 import com.hr.backend.domain.quiz.repository.AttemptRepository;
 import com.hr.backend.domain.quiz.repository.ExamRepository;
 import com.hr.backend.domain.quiz.repository.QuizRepository;
@@ -30,10 +30,18 @@ public class EnrollmentService {
     private final EnrollmentRepository  enrollmentRepository;
     private final UserRepository        userRepository;
     private final CourseRoundRepository courseRoundRepository;
-    private final AttemptRepository     attemptRepository;
-    private final ExamRepository        examRepository;
-    private final QuizRepository        quizRepository;
+    private final NotificationService        notificationService;
+    private final AttemptRepository          attemptRepository;
+    private final ExamRepository             examRepository;
+    private final QuizRepository             quizRepository;
     private final CertificateWorkflowService certificateWorkflowService;
+
+    /** 승인 대기 중인 수강 신청 목록 (관리자 승인 화면용) */
+    public List<EnrollmentResponse> getPendingEnrollments() {
+        return enrollmentRepository.findAllPending().stream()
+                .map(EnrollmentResponse::new)
+                .toList();
+    }
 
     /** 전체 이수 현황 조회 (관리자용) */
     public List<EnrollmentResponse> getAll() {
@@ -124,7 +132,7 @@ public class EnrollmentService {
         return new EnrollmentResponse(enrollmentRepository.save(enrollment));
     }
 
-    /** 수강 신청 (사용자용 - 신청 즉시 IN_PROGRESS, 승인 절차 없음) */
+    /** 수강 신청 (사용자용 - 신청 즉시 자동 승인 + IN_PROGRESS, 관리자 승인 절차 없음) */
     @Transactional
     public EnrollmentResponse applyEnrollment(Long userId, Long roundId) {
         if (enrollmentRepository.existsByUser_UserIdAndRound_RoundId(userId, roundId)) {
@@ -139,8 +147,8 @@ public class EnrollmentService {
                 .user(user)
                 .round(round)
                 .build();
-        enrollment.approve();  // 사용자 자체 신청도 즉시 승인 (주석: 승인 절차 없음)
-        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
+        enrollment.approve();                                    // approvalStatus = APPROVED, approvedAt = now()
+        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);  // 바로 수강 시작
         return new EnrollmentResponse(enrollmentRepository.save(enrollment));
     }
 
@@ -282,5 +290,56 @@ public class EnrollmentService {
                 .orElseThrow(() -> new IllegalArgumentException("차수를 찾을 수 없습니다."));
         round.update(round.getStartDate(), endDate);
         return courseRoundRepository.save(round);
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // 수강 신청 승인 / 반려 (관리자용, 알림 자동 발송)
+    // ──────────────────────────────────────────────────────────
+
+    /**
+     * 수강 신청 승인.
+     * ApprovalStatus → APPROVED, Status → IN_PROGRESS
+     * 해당 직원에게 알림 생성.
+     */
+    @Transactional
+    public EnrollmentResponse approveEnrollment(Long enrollmentId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new IllegalArgumentException("수강 정보를 찾을 수 없습니다."));
+
+        if (enrollment.getApprovalStatus() == Enrollment.ApprovalStatus.APPROVED) {
+            throw new IllegalStateException("이미 승인된 수강 신청입니다.");
+        }
+
+        enrollment.approve();
+        enrollment.changeStatus(Enrollment.Status.IN_PROGRESS);
+
+        String courseTitle = enrollment.getRound().getCourse().getTitle();
+        notificationService.notifyEnrollmentApproved(
+                enrollment.getUser(), courseTitle, enrollment.getEnrollmentId());
+
+        return new EnrollmentResponse(enrollment);
+    }
+
+    /**
+     * 수강 신청 반려.
+     * ApprovalStatus → REJECTED
+     * 해당 직원에게 알림 생성.
+     */
+    @Transactional
+    public EnrollmentResponse rejectEnrollment(Long enrollmentId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new IllegalArgumentException("수강 정보를 찾을 수 없습니다."));
+
+        if (enrollment.getApprovalStatus() == Enrollment.ApprovalStatus.REJECTED) {
+            throw new IllegalStateException("이미 반려된 수강 신청입니다.");
+        }
+
+        enrollment.reject();
+
+        String courseTitle = enrollment.getRound().getCourse().getTitle();
+        notificationService.notifyEnrollmentRejected(
+                enrollment.getUser(), courseTitle, enrollment.getEnrollmentId());
+
+        return new EnrollmentResponse(enrollment);
     }
 }

@@ -68,4 +68,26 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
         WHERE e.status <> 'DONE'
         """)
     List<Enrollment> findAllNotCompleted();
+
+    /** 승인 대기 중인 수강 신청 목록 (관리자 승인 화면용) */
+    @Query("""
+        SELECT e FROM Enrollment e
+        JOIN FETCH e.user u
+        LEFT JOIN FETCH u.department
+        JOIN FETCH e.round r
+        JOIN FETCH r.course c
+        WHERE e.approvalStatus = 'PENDING'
+        ORDER BY e.enrolledAt ASC
+        """)
+    List<Enrollment> findAllPending();
+
+    /** enrollment 단건 + 연관 엔티티 일괄 로드 (EnrollmentUserController 전용) */
+    @Query("""
+        SELECT e FROM Enrollment e
+        JOIN FETCH e.user u
+        JOIN FETCH e.round r
+        JOIN FETCH r.course c
+        WHERE e.enrollmentId = :id
+        """)
+    Optional<Enrollment> findByIdWithRound(@Param("id") Long id);
 }

@@ -28,13 +28,10 @@ public class EmployeeService {
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /** 직원 목록 조회 (키워드: 이름/사번/부서명) */
+    /** 직원 목록 조회 (키워드: 이름/사번/부서명) — DB LIKE 쿼리로 처리 */
     public List<EmployeeResponse> getAll(String keyword) {
-        return userRepository.findAll().stream()
-                .filter(u -> keyword == null || keyword.isBlank()
-                        || u.getName().contains(keyword)
-                        || u.getEmployeeNo().contains(keyword)
-                        || (u.getDepartment() != null && u.getDepartment().getName().contains(keyword)))
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword;
+        return userRepository.searchByKeyword(kw).stream()
                 .map(EmployeeResponse::new)
                 .toList();
     }

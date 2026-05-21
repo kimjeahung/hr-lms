@@ -27,8 +27,8 @@ public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
 
-    /** 허용할 CORS Origin 목록 (콤마 구분). 예: http://localhost:3000,https://your-domain.com */
-    @Value("${cors.allowed-origins:http://localhost:3000}")
+    /** application.yaml cors.allowed-origins (콤마 구분) */
+    @Value("${cors.allowed-origins:http://localhost:3005,http://192.168.2.46:3005}")
     private String allowedOriginsRaw;
 
     @Bean
@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/user/courses").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/auth/password").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // /api/certificate/** 는 anyRequest().authenticated() 로 처리 (일반 유저 접근 허용)
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtFilter(jwtProvider),
@@ -67,6 +68,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        // 와일드카드(*) 대신 허용 Origin 명시 — 환경변수 CORS_ALLOWED_ORIGINS로 관리
         List<String> origins = Arrays.stream(allowedOriginsRaw.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
