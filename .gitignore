@@ -1,53 +1,41 @@
-# =========================
-# Node / React / Next.js
-# =========================
-node_modules/
-.next/
-out/
-dist/
-npm-debug.log*
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# =========================
-# Spring Boot / Gradle
-# =========================
-.gradle/
-.gradle-cache/
-build/
-*.class
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# IntelliJ
-.idea/
-*.iml
+# testing
+/coverage
 
-# VSCode
-.vscode/
+# next.js
+/.next/
+/out/
 
-# =========================
-# Python / Flask
-# =========================
-__pycache__/
-*.pyc
-venv/
-.env
+# production
+/build
 
-# =========================
-# Upload files
-# =========================
-uploads/
-
-# =========================
-# OS
-# =========================
+# misc
 .DS_Store
-Thumbs.db
+*.pem
 
-# =========================
-# Docker
-# =========================
-docker-data/
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# =========================
-# Logs
-# =========================
-logs/
-*.log
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
